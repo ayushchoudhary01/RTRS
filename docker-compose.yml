@@ -1,0 +1,362 @@
+# version: '3.8'
+
+networks:
+  rtrs-network:
+    driver: bridge
+
+volumes:
+  postgres_trade_data:
+  postgres_ledger_data:
+  postgres_risk_data:
+  postgres_aml_data:
+  postgres_settlement_data:
+  postgres_audit_data:
+  postgres_recon_data:
+  postgres_auth_data:
+  redis_data:
+  kafka_1_data:
+  kafka_2_data:
+  kafka_3_data:
+
+services:
+
+  kafka-1:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: rtrs-kafka-1
+    networks:
+      - rtrs-network
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_1_data:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      CLUSTER_ID: np1-u6TLREKU1m7vc7w8bQ
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  kafka-2:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: rtrs-kafka-2
+    networks:
+      - rtrs-network
+    ports:
+      - "9093:9092"
+    volumes:
+      - kafka_2_data:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      CLUSTER_ID: np1-u6TLREKU1m7vc7w8bQ
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  kafka-3:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: rtrs-kafka-3
+    networks:
+      - rtrs-network
+    ports:
+      - "9094:9092"
+    volumes:
+      - kafka_3_data:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      CLUSTER_ID: np1-u6TLREKU1m7vc7w8bQ
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.7.1
+    container_name: rtrs-schema-registry
+    networks:
+      - rtrs-network
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR: 3
+      SCHEMA_REGISTRY_SCHEMA_COMPATIBILITY_LEVEL: BACKWARD
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: rtrs-kafka-ui
+    networks:
+      - rtrs-network
+    depends_on:
+      - schema-registry
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: rtrs-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+
+  postgres-trade:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-trade
+    networks:
+      - rtrs-network
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_trade_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: trade_db
+      POSTGRES_USER: rtrs_trade
+      POSTGRES_PASSWORD: rtrs_trade_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtrs_trade -d trade_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-ledger:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-ledger
+    networks:
+      - rtrs-network
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_ledger_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ledger_db
+      POSTGRES_USER: rtrs_ledger
+      POSTGRES_PASSWORD: rtrs_ledger_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtrs_ledger -d ledger_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-risk:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-risk
+    networks:
+      - rtrs-network
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_risk_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: risk_db
+      POSTGRES_USER: rtrs_risk
+      POSTGRES_PASSWORD: rtrs_risk_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtrs_risk -d risk_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-aml:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-aml
+    networks:
+      - rtrs-network
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_aml_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: aml_db
+      POSTGRES_USER: rtrs_aml
+      POSTGRES_PASSWORD: rtrs_aml_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtrs_aml -d aml_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-settlement:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-settlement
+    networks:
+      - rtrs-network
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_settlement_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: settlement_db
+      POSTGRES_USER: rtrs_settlement
+      POSTGRES_PASSWORD: rtrs_settlement_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtrs_settlement -d settlement_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-audit:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-audit
+    networks:
+      - rtrs-network
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_audit_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: audit_db
+      POSTGRES_USER: rtrs_audit
+      POSTGRES_PASSWORD: rtrs_audit_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtrs_audit -d audit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-recon:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-recon
+    networks:
+      - rtrs-network
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_recon_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: recon_db
+      POSTGRES_USER: rtrs_recon
+      POSTGRES_PASSWORD: rtrs_recon_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtrs_recon -d recon_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-auth:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-auth
+    networks:
+      - rtrs-network
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: rtrs_auth
+      POSTGRES_PASSWORD: rtrs_auth_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtrs_auth -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: rtrs-redis
+    networks:
+      - rtrs-network
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: rtrs-prometheus
+    networks:
+      - rtrs-network
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: rtrs-grafana
+    networks:
+      - rtrs-network
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./infrastructure/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: rtrs-loki
+    networks:
+      - rtrs-network
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: rtrs-tempo
+    networks:
+      - rtrs-network
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+    command: -config.file=/etc/tempo/tempo.yml
+    volumes:
+      - ./infrastructure/monitoring/tempo/tempo.yml:/etc/tempo/tempo.yml
