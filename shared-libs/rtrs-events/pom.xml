@@ -48,6 +48,12 @@
                         <configuration>
                             <sourceDirectory>${project.basedir}/src/main/avro</sourceDirectory>
                             <outputDirectory>${project.basedir}/src/main/java</outputDirectory>
+                            <stringType>String</stringType>
+                            <enableDecimalLogicalType>true</enableDecimalLogicalType>
+                            <imports>
+                                <import>${project.basedir}/src/main/avro/01-EventMetadata.avsc</import>
+                                <import>${project.basedir}/src/main/avro/02-TradeType.avsc</import>
+                            </imports>
                         </configuration>
                     </execution>
                 </executions>

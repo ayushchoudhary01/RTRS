@@ -1,0 +1,16 @@
+{
+  "namespace": "com.rtrs.events.aml",
+  "type": "record",
+  "name": "AmlFlaggedEvent",
+  "doc": "Published when a trade is flagged by the AML rule engine",
+  "fields": [
+    {"name": "metadata", "type": "com.rtrs.events.common.EventMetadata"},
+    {"name": "tradeId", "type": "string"},
+    {"name": "accountId", "type": "string"},
+    {"name": "riskScore", "type": "int", "doc": "AML risk score 0-100, threshold is 70"},
+    {"name": "triggeredRules", "type": {"type": "array", "items": "string"}, "doc": "Names of AML rules that fired"},
+    {"name": "flaggedAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "caseId", "type": ["null", "string"], "default": null, "doc": "SAR case ID if auto-created"},
+    {"name": "requiresManualReview", "type": "boolean", "default": false}
+  ]
+}

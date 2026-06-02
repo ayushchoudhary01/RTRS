@@ -1,0 +1,39 @@
+{
+  "namespace": "com.rtrs.events.trade",
+  "type": "record",
+  "name": "TradeExecutedEvent",
+  "doc": "Published when a trade is fully matched and executed",
+  "fields": [
+    {"name": "metadata", "type": "com.rtrs.events.common.EventMetadata"},
+    {"name": "tradeId", "type": "string", "doc": "UUID of the trade"},
+    {"name": "accountId", "type": "string"},
+    {"name": "instrumentId", "type": "string"},
+    {"name": "tradeType", "type": "com.rtrs.events.trade.TradeType"},
+    {
+      "name": "executionStatus",
+      "type": {
+        "type": "enum",
+        "name": "ExecutionStatus",
+        "symbols": ["FILLED", "PARTIALLY_FILLED", "REJECTED", "CANCELLED", "EXPIRED"]
+      }
+    },
+    {
+      "name": "filledQuantity",
+      "type": {"type": "bytes", "logicalType": "decimal", "precision": 38, "scale": 10}
+    },
+    {
+      "name": "executionPrice",
+      "type": {"type": "bytes", "logicalType": "decimal", "precision": 38, "scale": 10},
+      "doc": "Actual execution price (may differ from limit price)"
+    },
+    {"name": "currency", "type": "string"},
+    {"name": "executedAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {
+      "name": "settlementDate",
+      "type": ["null", {"type": "int", "logicalType": "date"}],
+      "default": null,
+      "doc": "T+2 settlement date as days since epoch"
+    },
+    {"name": "market", "type": ["null", "string"], "default": null}
+  ]
+}

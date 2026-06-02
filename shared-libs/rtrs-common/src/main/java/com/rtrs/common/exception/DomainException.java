@@ -1,16 +1,19 @@
 package com.rtrs.common.exception;
 
-import lombok.Getter;
+import com.rtrs.common.enums.ErrorCode;
+import org.springframework.http.HttpStatus;
 
-@Getter
 public class DomainException extends RuntimeException {
 
-    private final String errorCode;
-    private final int httpStatus;
+    private final ErrorCode errorCode;
+    private final HttpStatus httpStatus;
 
-    public DomainException(String message, String errorCode, int httpStatus) {
+    public DomainException(String message, ErrorCode errorCode, HttpStatus httpStatus) {
         super(message);
         this.errorCode = errorCode;
         this.httpStatus = httpStatus;
     }
+
+    public ErrorCode getErrorCode() { return errorCode; }
+    public HttpStatus getHttpStatus() { return httpStatus; }
 }

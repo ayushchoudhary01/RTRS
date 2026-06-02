@@ -1,0 +1,27 @@
+{
+  "namespace": "com.rtrs.events.trade",
+  "type": "record",
+  "name": "TradeSubmittedEvent",
+  "doc": "Published when a validated trade is submitted into the processing pipeline",
+  "fields": [
+    {"name": "metadata", "type": "com.rtrs.events.common.EventMetadata"},
+    {"name": "tradeId", "type": "string", "doc": "UUID of the trade"},
+    {"name": "clientOrderRef", "type": ["null", "string"], "default": null, "doc": "Client-provided idempotency reference"},
+    {"name": "accountId", "type": "string", "doc": "UUID of the trading account"},
+    {"name": "instrumentId", "type": "string", "doc": "Instrument symbol e.g. AAPL, BTC-USD"},
+    {"name": "tradeType", "type": "com.rtrs.events.trade.TradeType"},
+    {
+      "name": "quantity",
+      "type": {"type": "bytes", "logicalType": "decimal", "precision": 38, "scale": 10},
+      "doc": "Number of units to trade"
+    },
+    {
+      "name": "limitPrice",
+      "type": {"type": "bytes", "logicalType": "decimal", "precision": 38, "scale": 10},
+      "doc": "Limit price submitted by client"
+    },
+    {"name": "currency", "type": "string", "doc": "ISO 4217 currency code"},
+    {"name": "submittedAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "market", "type": ["null", "string"], "default": null, "doc": "Target market/exchange"}
+  ]
+}

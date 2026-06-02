@@ -1,0 +1,29 @@
+{
+  "namespace": "com.rtrs.events.ledger",
+  "type": "record",
+  "name": "LedgerEntryCreatedEvent",
+  "doc": "Published when a double-entry ledger record is written",
+  "fields": [
+    {"name": "metadata", "type": "com.rtrs.events.common.EventMetadata"},
+    {"name": "entryId", "type": "string", "doc": "UUID of the ledger entry"},
+    {"name": "tradeId", "type": "string"},
+    {"name": "accountId", "type": "string"},
+    {
+      "name": "entryType",
+      "type": {
+        "type": "enum",
+        "name": "EntryType",
+        "symbols": ["DEBIT", "CREDIT"]
+      }
+    },
+    {
+      "name": "amount",
+      "type": {"type": "bytes", "logicalType": "decimal", "precision": 38, "scale": 10}
+    },
+    {"name": "currency", "type": "string"},
+    {"name": "balanceAfter", "type": {"type": "bytes", "logicalType": "decimal", "precision": 38, "scale": 10}},
+    {"name": "entryHash", "type": "string", "doc": "SHA-256 hash of prevHash + payload for audit chain"},
+    {"name": "journalId", "type": "string", "doc": "UUID linking the debit and credit entries of this double-entry pair"},
+    {"name": "createdAt", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

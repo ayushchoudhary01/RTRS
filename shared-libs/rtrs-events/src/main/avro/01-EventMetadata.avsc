@@ -1,0 +1,16 @@
+{
+  "namespace": "com.rtrs.events.common",
+  "type": "record",
+  "name": "EventMetadata",
+  "doc": "Common metadata attached to every domain event in RTRS",
+  "fields": [
+    {"name": "eventId", "type": "string", "doc": "UUID uniquely identifying this event instance"},
+    {"name": "eventVersion", "type": "int", "doc": "Schema version of this event", "default": 1},
+    {"name": "eventType", "type": "string", "doc": "Fully qualified event type name"},
+    {"name": "correlationId", "type": "string", "doc": "UUID linking all events in a single trade lifecycle"},
+    {"name": "causationId", "type": "string", "doc": "UUID of the event that caused this event"},
+    {"name": "source", "type": "string", "doc": "Service that published this event"},
+    {"name": "publishedAt", "type": {"type": "long", "logicalType": "timestamp-millis"}, "doc": "Epoch millis when event was published"},
+    {"name": "traceId", "type": ["null", "string"], "default": null, "doc": "OpenTelemetry trace ID for distributed tracing"}
+  ]
+}

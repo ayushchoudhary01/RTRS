@@ -1,0 +1,13 @@
+{
+  "namespace": "com.rtrs.events.aml",
+  "type": "record",
+  "name": "AmlClearedEvent",
+  "doc": "Published when a trade passes all AML checks",
+  "fields": [
+    {"name": "metadata", "type": "com.rtrs.events.common.EventMetadata"},
+    {"name": "tradeId", "type": "string"},
+    {"name": "accountId", "type": "string"},
+    {"name": "riskScore", "type": "int", "doc": "AML risk score 0-100, threshold is 70"},
+    {"name": "clearedAt", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

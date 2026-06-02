@@ -1,0 +1,22 @@
+{
+  "namespace": "com.rtrs.events.trade",
+  "type": "record",
+  "name": "TradeRejectedEvent",
+  "doc": "Published when a trade is rejected at any stage of the pipeline",
+  "fields": [
+    {"name": "metadata", "type": "com.rtrs.events.common.EventMetadata"},
+    {"name": "tradeId", "type": "string"},
+    {"name": "accountId", "type": "string"},
+    {"name": "instrumentId", "type": "string"},
+    {
+      "name": "rejectionReason",
+      "type": {
+        "type": "enum",
+        "name": "RejectionReason",
+        "symbols": ["RISK_BREACH", "AML_FLAGGED", "VALIDATION_FAILED", "INSUFFICIENT_FUNDS", "MARKET_CLOSED", "TIMEOUT", "INTERNAL_ERROR"]
+      }
+    },
+    {"name": "rejectionDetails", "type": ["null", "string"], "default": null},
+    {"name": "rejectedAt", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "namespace": "com.rtrs.events.trade",
+  "type": "enum",
+  "name": "TradeType",
+  "doc": "Direction and type of a trade order",
+  "symbols": ["BUY", "SELL", "SHORT", "COVER"]
+}

@@ -6,16 +6,10 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class TradeDto {
 
     private String tradeId;
@@ -44,4 +38,29 @@ public class TradeDto {
     private TradeStatus status;
     private Instant createdAt;
     private Instant updatedAt;
+
+    public TradeDto() {}
+
+    public String getTradeId() { return tradeId; }
+    public void setTradeId(String tradeId) { this.tradeId = tradeId; }
+    public String getClientOrderRef() { return clientOrderRef; }
+    public void setClientOrderRef(String clientOrderRef) { this.clientOrderRef = clientOrderRef; }
+    public String getAccountId() { return accountId; }
+    public void setAccountId(String accountId) { this.accountId = accountId; }
+    public String getInstrumentId() { return instrumentId; }
+    public void setInstrumentId(String instrumentId) { this.instrumentId = instrumentId; }
+    public TradeType getTradeType() { return tradeType; }
+    public void setTradeType(TradeType tradeType) { this.tradeType = tradeType; }
+    public BigDecimal getQuantity() { return quantity; }
+    public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+    public TradeStatus getStatus() { return status; }
+    public void setStatus(TradeStatus status) { this.status = status; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
