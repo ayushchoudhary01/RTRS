@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/trade-flow.iml" filepath="$PROJECT_DIR$/.idea/trade-flow.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/trade-ingestion-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/trade-ingestion-service.main.iml" />
     </modules>
   </component>
 </project>

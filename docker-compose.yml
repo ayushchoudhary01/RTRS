@@ -6,6 +6,7 @@ networks:
 
 volumes:
   postgres_trade_data:
+  postgres_processor_data:
   postgres_ledger_data:
   postgres_risk_data:
   postgres_aml_data:
@@ -153,7 +154,7 @@ services:
     networks:
       - rtrs-network
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_trade_data:/var/lib/postgresql/data
     environment:
@@ -172,7 +173,7 @@ services:
     networks:
       - rtrs-network
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - postgres_ledger_data:/var/lib/postgresql/data
     environment:
@@ -191,7 +192,7 @@ services:
     networks:
       - rtrs-network
     ports:
-      - "5434:5432"
+      - "5435:5432"
     volumes:
       - postgres_risk_data:/var/lib/postgresql/data
     environment:
@@ -210,7 +211,7 @@ services:
     networks:
       - rtrs-network
     ports:
-      - "5435:5432"
+      - "5436:5432"
     volumes:
       - postgres_aml_data:/var/lib/postgresql/data
     environment:
@@ -229,7 +230,7 @@ services:
     networks:
       - rtrs-network
     ports:
-      - "5436:5432"
+      - "5437:5432"
     volumes:
       - postgres_settlement_data:/var/lib/postgresql/data
     environment:
@@ -248,7 +249,7 @@ services:
     networks:
       - rtrs-network
     ports:
-      - "5437:5432"
+      - "5438:5432"
     volumes:
       - postgres_audit_data:/var/lib/postgresql/data
     environment:
@@ -267,7 +268,7 @@ services:
     networks:
       - rtrs-network
     ports:
-      - "5438:5432"
+      - "5439:5432"
     volumes:
       - postgres_recon_data:/var/lib/postgresql/data
     environment:
@@ -286,7 +287,7 @@ services:
     networks:
       - rtrs-network
     ports:
-      - "5439:5432"
+      - "5440:5432"
     volumes:
       - postgres_auth_data:/var/lib/postgresql/data
     environment:
@@ -295,6 +296,25 @@ services:
       POSTGRES_PASSWORD: rtrs_auth_pass
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rtrs_auth -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-processor:
+    image: postgres:17-alpine
+    container_name: rtrs-postgres-processor
+    networks:
+      - rtrs-network
+    ports:
+      - "5441:5432"
+    volumes:
+      - postgres_processor_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: processor_db
+      POSTGRES_USER: rtrs_processor
+      POSTGRES_PASSWORD: rtrs_processor_pass
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U rtrs_processor -d processor_db" ]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -16,6 +16,7 @@ java {
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven { url = uri("https://packages.confluent.io/maven/") }
 }
 
@@ -30,6 +31,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("me.paulschwarz:spring-dotenv:4.0.0")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
     // kafka + avro
     implementation("org.springframework.kafka:spring-kafka")
@@ -41,7 +44,7 @@ dependencies {
     // observability
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
-    implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
+    implementation("io.opentelemetry:opentelemetry-exporter-otlp")
 
     // db
     runtimeOnly("org.postgresql:postgresql")
