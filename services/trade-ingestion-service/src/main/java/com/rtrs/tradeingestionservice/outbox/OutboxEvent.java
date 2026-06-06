@@ -3,6 +3,9 @@ package com.rtrs.tradeingestionservice.outbox;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -33,6 +36,7 @@ public class OutboxEvent {
     private String partitionKey;
 
     @Column(nullable = false, updatable = false, columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String payload;
 
     @Column(nullable = false)
