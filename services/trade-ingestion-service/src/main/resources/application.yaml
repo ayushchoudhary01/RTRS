@@ -33,7 +33,7 @@ spring:
     bootstrap-servers: localhost:9092,localhost:9093,localhost:9094
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
       retries: 2147483647
       compression-type: lz4

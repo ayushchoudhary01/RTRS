@@ -18,9 +18,6 @@ public class KafkaConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    @Value("${spring.kafka.properties.schema.registry.url}")
-    private String schemaRegistryUrl;
-
     // Producer factory — idempotent producer setup taki duplicate messages na jayein
     @Bean
     public ProducerFactory<String, String> producerFactory() {
