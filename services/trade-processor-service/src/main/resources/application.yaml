@@ -41,8 +41,6 @@ spring:
         enable.idempotence: true
         max.in.flight.requests.per.connection: 1
         delivery.timeout.ms: 120000
-    properties:
-      schema.registry.url: http://localhost:8081
     consumer:
       group-id: trade-processor-group
       auto-offset-reset: earliest
