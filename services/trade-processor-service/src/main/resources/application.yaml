@@ -33,7 +33,7 @@ spring:
     bootstrap-servers: localhost:9092,localhost:9093,localhost:9094
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
       retries: 2147483647
       compression-type: lz4
@@ -45,9 +45,7 @@ spring:
       group-id: trade-processor-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
-      properties:
-        specific.avro.reader: true
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
   data:
     redis:

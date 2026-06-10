@@ -26,9 +26,8 @@ public class TradeSubmittedConsumer {
     )
     public void consume(ConsumerRecord<String, String> record) {
         try {
-            log.info("Trade submitted event received. key={}, partition={}",
-                    record.key(), record.partition());
-
+            log.info("Trade submitted event received. offset={}, key={}, partition={}",
+                    record.offset(), record.key(), record.partition());
             ObjectMapper mapper = new ObjectMapper();
             JsonNode payload = mapper.readTree(record.value());
 
