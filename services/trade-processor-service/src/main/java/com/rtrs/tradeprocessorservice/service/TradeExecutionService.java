@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -26,7 +27,7 @@ public class TradeExecutionService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
-    private final StateMachine<TradeApprovalStatus, TradeEvent> stateMachine;
+    private final StateMachineFactory<TradeApprovalStatus, TradeEvent> stateMachineFactory;
 
     @Value("${rtrs.kafka.topics.trade-executed}")
     private String tradeExecutedTopic;
@@ -37,6 +38,8 @@ public class TradeExecutionService {
         log.info("Executing trade. tradeId={}", tradeId);
 
         // State machine transition
+        StateMachine<TradeApprovalStatus, TradeEvent> stateMachine = stateMachineFactory.getStateMachine(tradeId.toString());
+        stateMachine.startReactively().subscribe();
         stateMachine.sendEvent(Mono.just(
                 MessageBuilder.withPayload(TradeEvent.EXECUTE)
                         .setHeader("tradeId", tradeId.toString())

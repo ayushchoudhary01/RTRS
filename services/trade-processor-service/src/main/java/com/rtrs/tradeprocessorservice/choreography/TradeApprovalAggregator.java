@@ -30,6 +30,10 @@ public class TradeApprovalAggregator {
     @Transactional
     public boolean markRiskCleared(UUID tradeId) {
         TradeApprovalState state = findOrThrow(tradeId);
+        if ("APPROVED".equals(state.getStatus())) {
+            log.warn("Trade already approved, skipping duplicate execution. tradeId={}", tradeId);
+            return false;
+        }
         state.markRiskCleared();
         approvalStateRepository.save(state);
         log.info("Risk cleared for tradeId={}. bothCleared={}", tradeId, state.isBothCleared());
@@ -40,6 +44,10 @@ public class TradeApprovalAggregator {
     @Transactional
     public boolean markAmlCleared(UUID tradeId) {
         TradeApprovalState state = findOrThrow(tradeId);
+        if ("APPROVED".equals(state.getStatus())) {
+            log.warn("Trade already approved, skipping duplicate execution. tradeId={}", tradeId);
+            return false;
+        }
         state.markAmlCleared();
         approvalStateRepository.save(state);
         log.info("AML cleared for tradeId={}. bothCleared={}", tradeId, state.isBothCleared());
@@ -55,7 +63,7 @@ public class TradeApprovalAggregator {
     }
 
     private TradeApprovalState findOrThrow(UUID tradeId) {
-        return approvalStateRepository.findByTradeId(tradeId)
+        return approvalStateRepository.findByTradeIdForUpdate(tradeId)
                 .orElseThrow(() -> new IllegalStateException("No approval state found for tradeId: " + tradeId));
     }
 }
