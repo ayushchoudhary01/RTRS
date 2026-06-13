@@ -38,23 +38,10 @@ public class OutboxPublisher {
 
     private void publishEvent(OutboxEvent event) {
         try {
-            // Partition key instrument ID hai — same instrument same partition pe jayega
-            tradeEventProducer.publish(event.getTopic(), event.getPartitionKey(), event.getPayload())
-                    .whenComplete((result, ex) -> {
-                        if (ex != null) {
-                            // Kafka publish fail — attempt count badha do, retry next poll mein
-                            event.recordFailure(ex.getMessage());
-                            outboxEventRepository.save(event);
-                            log.error("Kafka publish failed. eventId={}, topic={}, error={}",
-                                    event.getId(), event.getTopic(), ex.getMessage());
-                        } else {
-                            event.markProcessed();
-                            outboxEventRepository.save(event);
-                            log.debug("Event published successfully. eventId={}, topic={}, partition={}",
-                                    event.getId(), event.getTopic(),
-                                    result.getRecordMetadata().partition());
-                        }
-                    });
+            tradeEventProducer.publish(event.getTopic(), event.getPartitionKey(), event.getPayload()).get();
+            event.markProcessed();
+            outboxEventRepository.save(event);
+            log.debug("Event published successfully. eventId={}, topic={}", event.getId(), event.getTopic());
         } catch (Exception ex) {
             event.recordFailure(ex.getMessage());
             outboxEventRepository.save(event);

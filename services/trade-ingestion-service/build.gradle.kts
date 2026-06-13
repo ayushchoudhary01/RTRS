@@ -1,3 +1,6 @@
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.java
+
 plugins {
     java
     id("org.springframework.boot") version "4.0.6"

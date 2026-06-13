@@ -146,6 +146,34 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
 
+  kafka-init:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: rtrs-kafka-init
+    networks:
+      - rtrs-network
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: |
+      "
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic trade.submitted.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic trade.rejected.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic trade.executed.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic risk.approved.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic risk.breached.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic aml.cleared.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic aml.flagged.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic ledger.entry.created.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic trade.submitted.v1.DLT --partitions 3 --replication-factor 3 &&
+      echo 'Topics created.'
+      "
+    restart: on-failure
+
   postgres-trade:
     image: postgres:17-alpine
     container_name: rtrs-postgres-trade

@@ -17,6 +17,8 @@ public interface ApprovalStateRepository extends JpaRepository<TradeApprovalStat
     @Query("SELECT t FROM TradeApprovalState t WHERE t.tradeId = :tradeId")
     Optional<TradeApprovalState> findByTradeIdForUpdate(@Param("tradeId") UUID tradeId);
 
+    Optional<TradeApprovalState> findByTradeId(UUID tradeId);
+
     // 30 seconds ke baad bhi PENDING hai to timeout candidate hai
     @Query("SELECT t FROM TradeApprovalState t WHERE t.status IN ('PENDING', 'RISK_CLEARED', 'AML_CLEARED') AND t.createdAt < :cutoff")
     List<TradeApprovalState> findStaleApprovals(Instant cutoff);
