@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -29,7 +30,12 @@ public class TradeApprovalAggregator {
     // Risk Engine ne approve kiya — flag set kro
     @Transactional
     public boolean markRiskCleared(UUID tradeId) {
-        TradeApprovalState state = findOrThrow(tradeId);
+        Optional<TradeApprovalState> stateOpt = approvalStateRepository.findByTradeIdForUpdate(tradeId);
+        if (stateOpt.isEmpty()) {
+            log.warn("Approval state not yet created for tradeId={}. Risk event arrived before trade submission processed.", tradeId);
+            return false;
+        }
+        TradeApprovalState state = stateOpt.get();
         if ("APPROVED".equals(state.getStatus())) {
             log.warn("Trade already approved, skipping duplicate execution. tradeId={}", tradeId);
             return false;
@@ -43,7 +49,12 @@ public class TradeApprovalAggregator {
     // AML Engine ne clear kiya — flag set karo
     @Transactional
     public boolean markAmlCleared(UUID tradeId) {
-        TradeApprovalState state = findOrThrow(tradeId);
+        Optional<TradeApprovalState> stateOpt = approvalStateRepository.findByTradeIdForUpdate(tradeId);
+        if (stateOpt.isEmpty()) {
+            log.warn("Approval state not yet created for tradeId={}. AML event arrived before trade submission processed.", tradeId);
+            return false;
+        }
+        TradeApprovalState state = stateOpt.get();
         if ("APPROVED".equals(state.getStatus())) {
             log.warn("Trade already approved, skipping duplicate execution. tradeId={}", tradeId);
             return false;

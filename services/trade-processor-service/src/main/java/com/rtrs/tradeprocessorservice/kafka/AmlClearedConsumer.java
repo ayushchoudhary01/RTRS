@@ -25,19 +25,22 @@ public class AmlClearedConsumer {
             containerFactory = "avroKafkaListenerContainerFactory"
     )
     public void consume(ConsumerRecord<String, AmlClearedEvent> record) {
+        AmlClearedEvent event = record.value();
+        UUID tradeId = UUID.fromString(event.getTradeId());
+        String instrumentId = record.key();
         try {
-            AmlClearedEvent event = record.value();
-            UUID tradeId = UUID.fromString(event.getTradeId());
-            String instrumentId = record.key();
-
             log.info("AML cleared event received. tradeId={}", tradeId);
 
             boolean bothCleared = approvalAggregator.markAmlCleared(tradeId);
             if (bothCleared) {
                 tradeExecutionService.execute(tradeId, instrumentId);
             }
+        } catch (IllegalStateException ex) {
+            log.warn("Approval state not found for tradeId={}, will retry.", tradeId);
+            throw new RuntimeException(ex);
         } catch (Exception ex) {
             log.error("Failed to process aml.cleared event. error={}", ex.getMessage(), ex);
+            throw new RuntimeException(ex);
         }
     }
 }

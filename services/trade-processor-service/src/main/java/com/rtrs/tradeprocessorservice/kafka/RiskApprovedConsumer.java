@@ -27,19 +27,22 @@ public class RiskApprovedConsumer {
             containerFactory = "avroKafkaListenerContainerFactory"
     )
     public void consume(ConsumerRecord<String, RiskApprovedEvent> record) {
+        RiskApprovedEvent event = record.value();
+        UUID tradeId = UUID.fromString(event.getTradeId());
+        String instrumentId = record.key();
         try {
-            RiskApprovedEvent event = record.value();
-            UUID tradeId = UUID.fromString(event.getTradeId());
-            String instrumentId = event.getInstrumentId();
-
             log.info("Risk approved event received. tradeId={}", tradeId);
 
             boolean bothCleared = approvalAggregator.markRiskCleared(tradeId);
             if (bothCleared) {
                 tradeExecutionService.execute(tradeId, instrumentId);
             }
+        } catch (IllegalStateException ex) {
+            log.warn("Approval state not found for tradeId={}, will retry.", tradeId);
+            throw new RuntimeException(ex);
         } catch (Exception ex) {
             log.error("Failed to process risk.approved event. error={}", ex.getMessage(), ex);
+            throw new RuntimeException(ex);
         }
     }
 }
