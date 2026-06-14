@@ -1,7 +1,6 @@
 package com.rtrs.tradeprocessorservice.kafka;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rtrs.events.aml.AmlClearedEvent;
 import com.rtrs.tradeprocessorservice.choreography.TradeApprovalAggregator;
 import com.rtrs.tradeprocessorservice.service.TradeExecutionService;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +21,13 @@ public class AmlClearedConsumer {
 
     @KafkaListener(
             topics = "${rtrs.kafka.topics.aml-cleared}",
-            groupId = "${spring.kafka.consumer.group-id}"
+            groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "avroKafkaListenerContainerFactory"
     )
-    public void consume(ConsumerRecord<String, String> record) {
+    public void consume(ConsumerRecord<String, AmlClearedEvent> record) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode payload = mapper.readTree(record.value());
-
-            UUID tradeId = UUID.fromString(payload.get("tradeId").asText());
+            AmlClearedEvent event = record.value();
+            UUID tradeId = UUID.fromString(event.getTradeId());
             String instrumentId = record.key();
 
             log.info("AML cleared event received. tradeId={}", tradeId);
@@ -38,7 +36,6 @@ public class AmlClearedConsumer {
             if (bothCleared) {
                 tradeExecutionService.execute(tradeId, instrumentId);
             }
-
         } catch (Exception ex) {
             log.error("Failed to process aml.cleared event. error={}", ex.getMessage(), ex);
         }

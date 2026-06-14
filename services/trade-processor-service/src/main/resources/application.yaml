@@ -31,6 +31,8 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092,localhost:9093,localhost:9094
+    properties:
+      schema.registry.url: http://localhost:8081
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer

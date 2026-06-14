@@ -1,7 +1,6 @@
 package com.rtrs.tradeprocessorservice.kafka;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rtrs.events.risk.RiskApprovedEvent;
 import com.rtrs.tradeprocessorservice.choreography.CompensatingActionService;
 import com.rtrs.tradeprocessorservice.choreography.TradeApprovalAggregator;
 import com.rtrs.tradeprocessorservice.service.TradeExecutionService;
@@ -24,15 +23,14 @@ public class RiskApprovedConsumer {
 
     @KafkaListener(
             topics = "${rtrs.kafka.topics.risk-approved}",
-            groupId = "${spring.kafka.consumer.group-id}"
+            groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "avroKafkaListenerContainerFactory"
     )
-    public void consume(ConsumerRecord<String, String> record) {
+    public void consume(ConsumerRecord<String, RiskApprovedEvent> record) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode payload = mapper.readTree(record.value());
-
-            UUID tradeId = UUID.fromString(payload.get("tradeId").asText());
-            String instrumentId = record.key();
+            RiskApprovedEvent event = record.value();
+            UUID tradeId = UUID.fromString(event.getTradeId());
+            String instrumentId = event.getInstrumentId();
 
             log.info("Risk approved event received. tradeId={}", tradeId);
 
@@ -40,7 +38,6 @@ public class RiskApprovedConsumer {
             if (bothCleared) {
                 tradeExecutionService.execute(tradeId, instrumentId);
             }
-
         } catch (Exception ex) {
             log.error("Failed to process risk.approved event. error={}", ex.getMessage(), ex);
         }

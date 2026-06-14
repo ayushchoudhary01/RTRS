@@ -6,20 +6,16 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
 public class RiskRuleChain {
 
-    private final PositionLimitRule positionLimitRule;
-    private final VaRRule varRule;
-    private final ConcentrationRule concentrationRule;
+    private final List<RiskRule> rules;
 
-    // Order matters — cheapest check pehle, expensive baad mein
-    private List<RiskRule> buildChain() {
-        return List.of(positionLimitRule, varRule, concentrationRule);
+    public RiskRuleChain(List<RiskRule> rules) {
+        this.rules = rules;
     }
 
     public RiskChainResult execute(RiskContext context) {
-        for (RiskRule rule : buildChain()) {
+        for (RiskRule rule : rules) {
             RiskRuleResult result = rule.evaluate(context);
             if (!result.isPassed()) {
                 return RiskChainResult.breached(rule.getRuleName(), result.getBreachReason());
