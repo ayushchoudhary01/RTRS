@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -55,12 +56,25 @@ public class TradeApprovalState {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public static TradeApprovalState create(UUID tradeId, String instrumentId, UUID accountId) {
+    @Column(name = "quantity", nullable = false, precision = 38, scale = 10)
+    private BigDecimal quantity;
+
+    @Column(name = "limit_price", nullable = false, precision = 38, scale = 10)
+    private BigDecimal limitPrice;
+
+    @Column(name = "currency", nullable = false)
+    private String currency;
+
+    public static TradeApprovalState create(UUID tradeId, String instrumentId, UUID accountId, BigDecimal quantity,
+                                            BigDecimal limitPrice, String currency) {
         TradeApprovalState state = new TradeApprovalState();
         state.tradeId = tradeId;
         state.instrumentId = instrumentId;
         state.accountId = accountId;
         state.status = "PENDING";
+        state.quantity = quantity;
+        state.limitPrice = limitPrice;
+        state.currency = currency;
         return state;
     }
 

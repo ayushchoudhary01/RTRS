@@ -2,6 +2,8 @@ package com.rtrs.tradeprocessorservice.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rtrs.tradeprocessorservice.choreography.ApprovalStateRepository;
+import com.rtrs.tradeprocessorservice.choreography.TradeApprovalState;
 import com.rtrs.tradeprocessorservice.outbox.OutboxEvent;
 import com.rtrs.tradeprocessorservice.outbox.OutboxEventRepository;
 import com.rtrs.tradeprocessorservice.statemachine.TradeApprovalStatus;
@@ -28,6 +30,7 @@ public class TradeExecutionService {
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
     private final StateMachineFactory<TradeApprovalStatus, TradeEvent> stateMachineFactory;
+    private final ApprovalStateRepository approvalStateRepository;
 
     @Value("${rtrs.kafka.topics.trade-executed}")
     private String tradeExecutedTopic;
@@ -37,7 +40,9 @@ public class TradeExecutionService {
     public void execute(UUID tradeId, String instrumentId) {
         log.info("Executing trade. tradeId={}", tradeId);
 
-        // State machine transition
+        TradeApprovalState state = approvalStateRepository.findByTradeId(tradeId)
+                .orElseThrow(() -> new IllegalStateException("No approval state for tradeId: " + tradeId));
+
         StateMachine<TradeApprovalStatus, TradeEvent> stateMachine = stateMachineFactory.getStateMachine(tradeId.toString());
         stateMachine.startReactively().subscribe();
         stateMachine.sendEvent(Mono.just(
@@ -49,9 +54,13 @@ public class TradeExecutionService {
         try {
             String payload = objectMapper.writeValueAsString(Map.of(
                     "tradeId", tradeId.toString(),
+                    "accountId", state.getAccountId().toString(),
+                    "instrumentId", instrumentId,
+                    "quantity", state.getQuantity().toString(),
+                    "limitPrice", state.getLimitPrice().toString(),
+                    "currency", state.getCurrency(),
                     "executionStatus", "FILLED",
-                    "executedAt", Instant.now().toString(),
-                    "instrumentId", instrumentId
+                    "executedAt", Instant.now().toString()
             ));
 
             OutboxEvent event = OutboxEvent.create(
@@ -62,7 +71,6 @@ public class TradeExecutionService {
                     instrumentId,
                     payload
             );
-
             outboxEventRepository.save(event);
             log.info("Trade executed successfully. tradeId={}", tradeId);
 

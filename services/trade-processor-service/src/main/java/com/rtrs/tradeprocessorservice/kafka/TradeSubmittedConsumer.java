@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Slf4j
@@ -34,8 +35,11 @@ public class TradeSubmittedConsumer {
             UUID tradeId = UUID.fromString(payload.get("tradeId").asText());
             String instrumentId = payload.get("instrumentId").asText();
             UUID accountId = UUID.fromString(payload.get("accountId").asText());
+            BigDecimal quantity = new BigDecimal(payload.get("quantity").asText());
+            BigDecimal limitPrice = new BigDecimal(payload.get("limitPrice").asText());
+            String currency = payload.get("currency").asText();
 
-            approvalAggregator.initiate(tradeId, instrumentId, accountId);
+            approvalAggregator.initiate(tradeId, instrumentId, accountId, quantity, limitPrice, currency);
 
         } catch (Exception ex) {
             log.error("Failed to process trade.submitted event. key={}, error={}",

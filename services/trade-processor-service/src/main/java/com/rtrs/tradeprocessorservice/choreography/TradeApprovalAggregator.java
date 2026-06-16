@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,12 +18,14 @@ public class TradeApprovalAggregator {
 
     // New trade aya — approval state create kro PostgreSQL me
     @Transactional
-    public void initiate(UUID tradeId, String instrumentId, UUID accountId) {
+    public void initiate(UUID tradeId, String instrumentId, UUID accountId,
+                         BigDecimal quantity, BigDecimal limitPrice, String currency) {
         if (approvalStateRepository.findByTradeId(tradeId).isPresent()) {
             log.warn("Approval state already exists for tradeId={}", tradeId);
             return;
         }
-        TradeApprovalState state = TradeApprovalState.create(tradeId, instrumentId, accountId);
+        TradeApprovalState state = TradeApprovalState.create(tradeId, instrumentId, accountId,
+                quantity, limitPrice, currency);
         approvalStateRepository.save(state);
         log.info("Approval state initiated. tradeId={}", tradeId);
     }

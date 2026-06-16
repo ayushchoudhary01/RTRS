@@ -1,0 +1,4 @@
+ALTER TABLE trade_approval_state
+    ADD COLUMN quantity    NUMERIC(38, 10) NOT NULL DEFAULT 0,
+    ADD COLUMN limit_price NUMERIC(38, 10) NOT NULL DEFAULT 0,
+    ADD COLUMN currency    VARCHAR(10)     NOT NULL DEFAULT 'USD';
