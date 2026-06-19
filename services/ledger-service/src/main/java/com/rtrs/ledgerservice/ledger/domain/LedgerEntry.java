@@ -15,7 +15,7 @@ import java.util.UUID;
 public class LedgerEntry {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(nullable = false, updatable = false)
     private UUID id;
 
     @Column(nullable = false, updatable = false)
@@ -48,16 +48,14 @@ public class LedgerEntry {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
-    @PrePersist
-    void prePersist() {
-        createdAt = Instant.now();
-    }
 
-    public static LedgerEntry create(UUID journalId, UUID accountId, String entryType,
-                                     BigDecimal amount, String currency,
-                                     BigDecimal balanceAfter, String prevHash,
-                                     String entryHash, Long sequenceNum) {
+    public static LedgerEntry create(UUID id, UUID journalId, UUID accountId, String entryType,
+                                     BigDecimal amount, String currency, BigDecimal balanceAfter,
+                                     String prevHash, String entryHash, Long sequenceNum,
+                                     Instant createdAt) {
         LedgerEntry e = new LedgerEntry();
+        e.id = id;
+        e.createdAt = createdAt;
         e.journalId = journalId;
         e.accountId = accountId;
         e.entryType = entryType;

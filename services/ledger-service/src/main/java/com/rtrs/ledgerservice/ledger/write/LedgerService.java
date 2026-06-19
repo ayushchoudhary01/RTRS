@@ -1,6 +1,7 @@
 package com.rtrs.ledgerservice.ledger.write;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rtrs.ledgerservice.ledger.domain.*;
 import com.rtrs.ledgerservice.outbox.*;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -65,8 +65,8 @@ public class LedgerService {
         String debitHash = hashChainService.computeHash(prevHash, debitId, accountId,
                 "DEBIT", totalAmount, debitTime);
 
-        LedgerEntry debitEntry = LedgerEntry.create(journal.getId(), accountId, "DEBIT",
-                totalAmount, currency, balanceAfterDebit, prevHash, debitHash, nextSeq);
+        LedgerEntry debitEntry = LedgerEntry.create(debitId, journal.getId(), accountId, "DEBIT",
+                totalAmount, currency, balanceAfterDebit, prevHash, debitHash, nextSeq, debitTime);
         entryRepository.save(debitEntry);
         balance.applyEntry(totalAmount, "DEBIT", debitHash);
         balanceRepository.save(balance);
@@ -78,8 +78,8 @@ public class LedgerService {
         String creditHash = hashChainService.computeHash(debitHash, creditId, accountId,
                 "CREDIT", totalAmount, creditTime);
 
-        LedgerEntry creditEntry = LedgerEntry.create(journal.getId(), accountId, "CREDIT",
-                totalAmount, currency, balanceAfterCredit, debitHash, creditHash, nextSeq + 1);
+        LedgerEntry creditEntry = LedgerEntry.create(creditId, journal.getId(), accountId, "CREDIT",
+                totalAmount, currency, balanceAfterCredit, debitHash, creditHash, nextSeq + 1, creditTime);
         entryRepository.save(creditEntry);
         balance.applyEntry(totalAmount, "CREDIT", creditHash);
         balanceRepository.save(balance);
