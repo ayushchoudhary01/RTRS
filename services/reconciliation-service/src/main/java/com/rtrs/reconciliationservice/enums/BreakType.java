@@ -1,0 +1,12 @@
+package com.rtrs.reconciliationservice.enums;
+
+public enum BreakType {
+    MISSING_IN_LEDGER,
+    MISSING_IN_PROCESSOR,
+    MISSING_DEBIT,
+    MISSING_CREDIT,
+    UNBALANCED_DOUBLE_ENTRY,
+    DUPLICATE_LEDGER_ENTRY,
+    AMOUNT_MISMATCH,
+    CURRENCY_MISMATCH
+}
