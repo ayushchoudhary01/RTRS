@@ -44,7 +44,7 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 server:
-  port: 8088
+  port: 8089
 
 management:
   endpoints:
@@ -80,7 +80,7 @@ rtrs:
   settlement:
     settlement-cycle-days: 2
     max-retry-attempts: 3
-    ledger-service-base-url: http://localhost:8085
+    eod-cron: "0 0 18 * * *"
 
   ledger:
     base-url: http://localhost:8085

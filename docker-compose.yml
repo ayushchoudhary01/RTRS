@@ -169,6 +169,9 @@ services:
       kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic aml.cleared.v1 --partitions 3 --replication-factor 3 &&
       kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic aml.flagged.v1 --partitions 3 --replication-factor 3 &&
       kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic ledger.entry.created.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic settlement.settled.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic settlement.failed.v1 --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic settlement.escalated.v1 --partitions 3 --replication-factor 3 &&
       kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic trade.submitted.v1.DLT --partitions 3 --replication-factor 3 &&
       echo 'Topics created.'
       "
