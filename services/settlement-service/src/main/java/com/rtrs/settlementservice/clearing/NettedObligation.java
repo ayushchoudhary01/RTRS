@@ -1,5 +1,6 @@
 package com.rtrs.settlementservice.clearing;
 
+import com.rtrs.settlementservice.enums.NettedObligationStatus;
 import com.rtrs.settlementservice.instruction.SettlementInstruction;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -43,7 +44,7 @@ public class NettedObligation {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "PENDING";
+    private NettedObligationStatus status = NettedObligationStatus.PENDING;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -79,10 +80,10 @@ public class NettedObligation {
     }
 
     public void markSettled() {
-        this.status = "SETTLED";
+        this.status = NettedObligationStatus.SETTLED;
     }
 
     public void markFailed() {
-        this.status = "FAILED";
+        this.status = NettedObligationStatus.FAILED;
     }
 }

@@ -5,9 +5,9 @@ spring:
     name: reconciliation-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5439/reconciliation_db
-    username: rtrs_reconciliation
-    password: rtrs_reconciliation_pass
+    url: jdbc:postgresql://localhost:5439/recon_db
+    username: rtrs_recon
+    password: rtrs_recon_pass
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10

@@ -60,7 +60,7 @@ public class EodSettlementJob {
     }
 
     @Bean
-    public Job eodSettlementJob(Step settlementStep) {
+    public Job eodSettlementJobBean(Step settlementStep) {
         return new JobBuilder("eodSettlementJob", jobRepository)
                 .start(settlementStep)
                 .build();

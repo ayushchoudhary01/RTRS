@@ -28,7 +28,7 @@ public class SettlementScheduler {
     private final SettlementRunRepository settlementRunRepository;
     private final NettedObligationRepository obligationRepository;
     private final JobOperator jobOperator;
-    private final Job eodSettlementJob;
+    private final Job eodSettlementJobBean;
 
     // Runs once daily — EOD settlement batch
     @Scheduled(cron = "${rtrs.settlement.eod-cron:0 0 18 * * *}")
@@ -70,7 +70,7 @@ public class SettlementScheduler {
                     .addLong("timestamp", System.currentTimeMillis()) // ensures unique JobInstance per run
                     .toJobParameters();
 
-            JobExecution execution = jobOperator.start(eodSettlementJob, params);
+            JobExecution execution = jobOperator.start(eodSettlementJobBean, params);
 
             SettlementRun run = settlementRunRepository.findById(runId)
                     .orElseThrow(() -> new IllegalStateException("SettlementRun not found: " + runId));
