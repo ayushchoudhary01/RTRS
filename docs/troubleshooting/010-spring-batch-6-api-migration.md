@@ -11,7 +11,7 @@ cases doesn't compile at all. Three separate issues were hit building
 ## Issue 1 — Wrong package for ListItemReader
 **Symptom:** import error for
 ```java
-import org.springframework.batch.infrastructure.item.support.ListItemReader;
+import org.springframework.batch.item.support.ListItemReader;
 ```
 
 **Cause:** that package path doesn't exist at any Spring Batch version. The
@@ -19,7 +19,7 @@ correct package never moved.
 
 **Fix:**
 ```java
-import org.springframework.batch.item.support.ListItemReader;
+import org.springframework.batch.infrastructure.item.support.ListItemReader;
 ```
 
 ## Issue 2 — Deprecated chunk(int, PlatformTransactionManager)

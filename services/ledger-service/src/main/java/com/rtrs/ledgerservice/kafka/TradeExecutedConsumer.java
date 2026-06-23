@@ -1,13 +1,13 @@
 package com.rtrs.ledgerservice.kafka;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rtrs.ledgerservice.ledger.write.LedgerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -30,12 +30,12 @@ public class TradeExecutedConsumer {
         try {
             JsonNode payload = objectMapper.readTree(record.value());
 
-            UUID tradeId = UUID.fromString(payload.get("tradeId").asString());
-            UUID accountId = UUID.fromString(payload.get("accountId").asString());
-            String instrumentId = payload.get("instrumentId").asString();
-            BigDecimal quantity = new BigDecimal(payload.get("quantity").asString());
-            BigDecimal limitPrice = new BigDecimal(payload.get("limitPrice").asString());
-            String currency = payload.get("currency").asString();
+            UUID tradeId = UUID.fromString(payload.get("tradeId").asText());
+            UUID accountId = UUID.fromString(payload.get("accountId").asText());
+            String instrumentId = payload.get("instrumentId").asText();
+            BigDecimal quantity = new BigDecimal(payload.get("quantity").asText());
+            BigDecimal limitPrice = new BigDecimal(payload.get("limitPrice").asText());
+            String currency = payload.get("currency").asText();
 
             ledgerService.recordTrade(tradeId, accountId, instrumentId,
                     quantity, limitPrice, currency);
