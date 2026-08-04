@@ -16,8 +16,8 @@ spring:
     password: rtrs_trade_pass
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 30
+      minimum-idle: 5
       connection-timeout: 30000
 
   jpa:
@@ -57,8 +57,8 @@ spring:
       timeout: 1000ms
       lettuce:
         pool:
-          max-active: 8
-          min-idle: 2
+          max-active: 30
+          min-idle: 5
 
 server:
   port: 8086
