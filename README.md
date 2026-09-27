@@ -27,12 +27,25 @@ engineering ever sees. A trade comes in, gets risk-checked, gets screened for
 money laundering, executes, gets recorded in an immutable ledger, settles two
 days later, and gets independently reconciled to make sure nothing went
 wrong anywhere along the way.
-
 Seven independently deployable services, seven separate databases, one Kafka backbone 
 connecting them. The focus was on implementing real distributed-systems patterns 
 correctly — the outbox pattern, choreography sagas under concurrency, double-entry 
 bookkeeping with a tamper-evident hash chain, multilateral netting, and DVP settlement 
 validation — rather than just wiring services together.
+
+## Latency & Scope
+
+"Real-time" here refers to pre-execution screening: risk and AML checks run inline
+in the trade path, completing in a few hundred milliseconds, rather than as an
+overnight compliance batch. That latency is bounded by two 100ms outbox polling
+loops; replacing them with Debezium CDC reading the PostgreSQL WAL would bring it
+to tens of milliseconds — the SMT and connector configs are written, the migration
+is not wired up (see `docs/future/001-debezium-cdc.md`).
+
+Post-execution is deliberately batch: T+2 settlement cycle, 18:00 EOD settlement
+run, 60-second reconciliation sweeps. These model how post-trade clearing actually
+works rather than optimising away a real-world constraint. The system as a whole is
+not real-time in the low-latency-trading sense, and isn't trying to be.
 
 ## Architecture
 
@@ -68,22 +81,22 @@ flowchart TD
 
 ## The Seven Services
 
-| Service | Port | Role |
-|---|---|---|
-|  **trade-ingestion** | 8086 | Entry point — validates and accepts trades |
-|  **trade-processor** | 8087 | Choreography orchestrator — aggregates risk + AML verdicts, executes or rejects |
-|  **risk-engine** | 8083 | Position limit, VaR, and concentration checks |
-|  **aml-engine** | 8084 | Five AML typologies — structuring, round-amount, layering, sanctions, high-value |
-|  **ledger-service** | 8085 | Double-entry bookkeeping, SHA-256 hash-chained, append-only |
-|  **settlement-service** | 8089 | T+2 settlement, multilateral netting, DVP validation, Spring Batch EOD job |
-|  **reconciliation-service** | 8088 | Independently cross-checks ledger vs trade records, every minute |
+| Service | Port | Role                                                                                     |
+|---|---|------------------------------------------------------------------------------------------|
+|  **trade-ingestion** | 8086 | Entry point — validates and accepts trades                                               |
+|  **trade-processor** | 8087 | Choreography orchestrator — aggregates risk + AML verdicts, executes or rejects          |
+|  **risk-engine** | 8083 | Position limit, simplified VaR, and concentration checks                                           |
+|  **aml-engine** | 8084 | Five AML typologies — structuring, round-amount, rapid-succession, sanctions, high-value |
+|  **ledger-service** | 8085 | Double-entry bookkeeping, SHA-256 hash-chained, append-only                              |
+|  **settlement-service** | 8089 | T+2 settlement, multilateral netting, DVP validation, Spring Batch EOD job               |
+|  **reconciliation-service** | 8088 | Independently cross-checks ledger vs trade records, every minute                         |
 
 Full breakdown of each service — classes, design decisions, what it consumes
 and publishes — lives in [`docs/architecture/`](./docs/architecture).
 
 ## What's Worth Looking At
 
-- **The outbox pattern, implemented correctly, twice.** An async-publish race
+- **The outbox pattern, implemented correctly, in four services.** An async-publish race
   condition that caused duplicate Kafka events was found and fixed with a
   synchronous send — see
   [`troubleshooting/005`](./docs/troubleshooting/005-outbox-duplicate-events.md).
@@ -108,8 +121,8 @@ and publishes — lives in [`docs/architecture/`](./docs/architecture).
   rejection, and a trade independently flagged by both risk *and* AML for
   different reasons — verified end-to-end with actual logs, not assumed to
   work. See
-  [`08-happy-path`](./docs/system-design/08-happy-path-trade-lifecycle.md)
-  and [`09-rejection-paths`](./docs/system-design/09-rejection-paths.md).
+  [`08-happy-path`](./docs/architecture/08-happy-path-trade-lifecycle.md)
+  and [`09-rejection-paths`](./docs/architecture/09-rejection-paths.md).
 
 ## Tech Stack
 
