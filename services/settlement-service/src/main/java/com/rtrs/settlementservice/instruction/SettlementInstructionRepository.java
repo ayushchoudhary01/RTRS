@@ -17,6 +17,11 @@ public interface SettlementInstructionRepository extends JpaRepository<Settlemen
     List<SettlementInstruction> findByStatusAndSettlementDateLessThanEqual(
             SettlementStatus status, LocalDate date);
 
+    // Picks up both first-attempt (PENDING) and re-attempt (RETRYING) instructions,
+    // so a failed settlement actually gets retried on the next EOD run
+    List<SettlementInstruction> findByStatusInAndSettlementDateLessThanEqual(
+            List<SettlementStatus> statuses, LocalDate date);
+
     List<SettlementInstruction> findByAccountIdAndInstrumentIdAndSettlementDateAndStatus(
             UUID accountId, String instrumentId, LocalDate settlementDate, SettlementStatus status);
 

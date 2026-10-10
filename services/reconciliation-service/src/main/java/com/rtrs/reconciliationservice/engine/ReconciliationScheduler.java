@@ -56,6 +56,10 @@ public class ReconciliationScheduler {
                 breaksResolved += result.breaksResolved();
             }
 
+            // Ledger-side sweep — catches entries posted with no trade execution record,
+            // which the trade-fact-driven loop above structurally cannot see
+            breaksFound += reconciliationEngine.checkOrphanedLedgerFacts();
+
             run.complete(tradesChecked, breaksFound, breaksResolved);
             runRepository.save(run);
 

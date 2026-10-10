@@ -26,6 +26,13 @@ public class DvpValidator {
     private String ledgerBaseUrl;
 
     public DvpResult validate(NettedObligation obligation, List<SettlementInstruction> instructions) {
+        // FLAT — buys and sells cancelled out exactly, so no delivery leg and no payment leg
+        if ("FLAT".equals(obligation.getNetDirection())) {
+            log.info("Obligation nets to zero, nothing to settle. accountId={}, instrumentId={}",
+                    obligation.getAccountId(), obligation.getInstrumentId());
+            return DvpResult.pass();
+        }
+
         boolean securityAvailable = checkSecurityAvailability(obligation);
         boolean cashAvailable = checkCashAvailability(obligation, instructions);
 
@@ -56,11 +63,19 @@ public class DvpValidator {
             return true;
         }
 
-        // Required cash = sum of notional across the actual instructions that were netted,
-        // not a derived/proxy price — this is the real money that must change hands
+        // Required cash = NET notional across the netted instructions — BUY legs cost cash,
+        // SELL legs bring it in; summing gross notional across both directions would demand
+        // more cash than a netted obligation actually needs, making netting reduce the
+        // quantity obligation while leaving the cash obligation un-netted
         BigDecimal requiredCash = instructions.stream()
-                .map(SettlementInstruction::notionalAmount)
+                .map(si -> "BUY".equals(si.getTradeType())
+                        ? si.notionalAmount()
+                        : si.notionalAmount().negate())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (requiredCash.compareTo(BigDecimal.ZERO) <= 0) {
+            return true;
+        }
 
         try {
             String url = ledgerBaseUrl + "/api/v1/ledger/accounts/" + obligation.getAccountId() + "/balance";

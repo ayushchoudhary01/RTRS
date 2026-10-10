@@ -40,12 +40,18 @@ public class SettlementLifecycleService {
     @Value("${rtrs.settlement.settlement-cycle-days}")
     private int settlementCycleDays;
 
+    // PENDING = never attempted, RETRYING = failed DVP previously and is owed another attempt
+    // Both are eligible for an EOD run; FAILED and ESCALATED are not (FAILED is only ever a
+    // transient state inside FailedSettlementHandler, ESCALATED needs manual intervention)
+    private static final List<SettlementStatus> SETTLEABLE_STATUSES =
+            List.of(SettlementStatus.PENDING, SettlementStatus.RETRYING);
+
     // Step 1 of the batch — confirm prerequisites before instructions enter clearing
     @Transactional
     public List<SettlementInstruction> confirmDueInstructions() {
         LocalDate today = LocalDate.now();
         List<SettlementInstruction> due = instructionRepository
-                .findByStatusAndSettlementDateLessThanEqual(SettlementStatus.PENDING, today);
+                .findByStatusInAndSettlementDateLessThanEqual(SETTLEABLE_STATUSES, today);
 
         for (SettlementInstruction si : due) {
             si.confirm();

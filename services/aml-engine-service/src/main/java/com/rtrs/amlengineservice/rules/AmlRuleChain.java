@@ -16,11 +16,14 @@ public class AmlRuleChain {
     public AmlChainResult execute(AmlContext context) {
         int riskScore = 0;
 
-        for (AmlRule rule : rules) {
+        for (int i = 0; i < rules.size(); i++) {
+            AmlRule rule = rules.get(i);
             AmlRuleResult result = rule.evaluate(context);
             if (!result.isPassed()) {
                 // Risk score based on rule order — earlier rules = higher severity
-                riskScore = 100 - (rules.indexOf(rule) * 10);
+                // Index comes from the loop rather than indexOf(), which was an O(n)
+                // scan of the list already being iterated
+                riskScore = 100 - (i * 10);
                 return AmlChainResult.flagged(rule.getRuleName(), result.getFlaggedReason(), riskScore);
             }
             // Each passed rule contributes a small risk score

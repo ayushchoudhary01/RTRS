@@ -173,6 +173,8 @@ services:
       kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic settlement.failed.v1 --partitions 3 --replication-factor 3 &&
       kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic settlement.escalated.v1 --partitions 3 --replication-factor 3 &&
       kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic trade.submitted.v1.DLT --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic risk.approved.v1.DLT --partitions 3 --replication-factor 3 &&
+      kafka-topics --bootstrap-server kafka-1:29092 --create --if-not-exists --topic aml.cleared.v1.DLT --partitions 3 --replication-factor 3 &&
       echo 'Topics created.'
       "
     restart: on-failure

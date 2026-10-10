@@ -35,7 +35,7 @@ public class NettedObligation {
     private BigDecimal netQuantity;
 
     @Column(nullable = false, updatable = false)
-    private String netDirection; // BUY | SELL
+    private String netDirection; // BUY | SELL | FLAT (buys and sells cancelled out exactly)
 
     @Column(nullable = false, updatable = false)
     private int instructionCount;
@@ -68,12 +68,16 @@ public class NettedObligation {
             }
         }
 
+        int sign = netQty.compareTo(BigDecimal.ZERO);
+
         NettedObligation obligation = new NettedObligation();
         obligation.accountId = accountId;
         obligation.instrumentId = instrumentId;
         obligation.settlementDate = settlementDate;
         obligation.netQuantity = netQty.abs();
-        obligation.netDirection = netQty.compareTo(BigDecimal.ZERO) >= 0 ? "BUY" : "SELL";
+        // A genuinely net-zero position is FLAT, not a zero-quantity BUY — there is
+        // nothing to deliver and nothing to pay, so DVP has nothing to check
+        obligation.netDirection = sign == 0 ? "FLAT" : (sign > 0 ? "BUY" : "SELL");
         obligation.instructionCount = instructions.size();
         obligation.settlementRunId = settlementRunId;
         return obligation;

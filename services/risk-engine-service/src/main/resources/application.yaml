@@ -73,9 +73,17 @@ rtrs:
       risk-breached: risk.breached.v1
 
   risk:
+    # Per-trade hard cap on notional
     position-limit-usd: 1000000
+    # Fraction of notional treated as at-risk, standing in for real volatility
     var-threshold-percent: 2.0
+    # Absolute VaR tolerance per trade — at 2% of notional this binds above
+    # $750,000 of notional — deliberately tighter than the position limit, so
+    # the rule is actually reachable rather than shadowed by PositionLimitRule
+    var-limit-usd: 15000
+    # Max accumulated exposure to a single instrument, as a % of the baseline below
     concentration-limit-percent: 20.0
+    portfolio-baseline-usd: 10000000
 
 logging:
   level:

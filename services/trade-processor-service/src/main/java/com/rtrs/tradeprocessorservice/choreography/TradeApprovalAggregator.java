@@ -39,8 +39,9 @@ public class TradeApprovalAggregator {
             return false;
         }
         TradeApprovalState state = stateOpt.get();
-        if ("APPROVED".equals(state.getStatus())) {
-            log.warn("Trade already approved, skipping duplicate execution. tradeId={}", tradeId);
+        if (state.isTerminal()) {
+            log.warn("Risk verdict arrived for trade already in terminal state. tradeId={}, status={}",
+                    tradeId, state.getStatus());
             return false;
         }
         state.markRiskCleared();
@@ -58,8 +59,9 @@ public class TradeApprovalAggregator {
             return false;
         }
         TradeApprovalState state = stateOpt.get();
-        if ("APPROVED".equals(state.getStatus())) {
-            log.warn("Trade already approved, skipping duplicate execution. tradeId={}", tradeId);
+        if (state.isTerminal()) {
+            log.warn("AML verdict arrived for trade already in terminal state. tradeId={}, status={}",
+                    tradeId, state.getStatus());
             return false;
         }
         state.markAmlCleared();

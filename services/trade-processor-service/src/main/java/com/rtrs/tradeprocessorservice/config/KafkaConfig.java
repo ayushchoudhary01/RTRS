@@ -4,6 +4,7 @@ import com.rtrs.events.risk.RiskApprovedEvent;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -75,7 +76,8 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, RiskApprovedEvent> avroKafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, RiskApprovedEvent> avroKafkaListenerContainerFactory(
+            DefaultErrorHandler avroErrorHandler) {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -89,7 +91,38 @@ public class KafkaConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(props));
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.BATCH);
+        factory.setCommonErrorHandler(avroErrorHandler);
         return factory;
+    }
+
+    // Avro records cannot be routed to a DLT through the String-serialized template
+    // used by the JSON side, so the Avro consumers get their own producer, recoverer
+    // and error handler — without this, a persistently-failing risk.approved.v1 or
+    // aml.cleared.v1 message fell back to Spring Kafka's defaults with no DLT at all
+    @Bean
+    public ProducerFactory<String, Object> avroProducerFactory() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        config.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+        config.put(ProducerConfig.ACKS_CONFIG, "all");
+        config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 1);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaTemplate<String, Object> avroKafkaTemplate(ProducerFactory<String, Object> avroProducerFactory) {
+        return new KafkaTemplate<>(avroProducerFactory);
+    }
+
+    @Bean
+    public DefaultErrorHandler avroErrorHandler(KafkaTemplate<String, Object> avroKafkaTemplate) {
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(avroKafkaTemplate,
+                (record, ex) -> new TopicPartition(record.topic() + ".DLT", record.partition()));
+        // Same 3-retry, 1s-backoff policy as the JSON consumer factory
+        return new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 3L));
     }
 
     @Bean

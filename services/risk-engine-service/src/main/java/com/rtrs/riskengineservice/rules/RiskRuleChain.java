@@ -18,7 +18,8 @@ public class RiskRuleChain {
         for (RiskRule rule : rules) {
             RiskRuleResult result = rule.evaluate(context);
             if (!result.isPassed()) {
-                return RiskChainResult.breached(rule.getRuleName(), result.getBreachReason());
+                return RiskChainResult.breached(rule.getRuleName(), result.getBreachReason(),
+                        result.getThresholdValue());
             }
         }
         return RiskChainResult.approved();

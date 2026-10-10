@@ -43,6 +43,14 @@ public class TradeExecutionService {
         TradeApprovalState state = approvalStateRepository.findByTradeId(tradeId)
                 .orElseThrow(() -> new IllegalStateException("No approval state for tradeId: " + tradeId));
 
+        // Defence in depth — a trade already rejected or timed out must never execute,
+        // even if a late clearance somehow reached the aggregator
+        if (state.isRejected()) {
+            log.error("Refusing to execute a trade in a rejected state. tradeId={}, status={}",
+                    tradeId, state.getStatus());
+            return;
+        }
+
         StateMachine<TradeApprovalStatus, TradeEvent> stateMachine = stateMachineFactory.getStateMachine(tradeId.toString());
         stateMachine.startReactively().subscribe();
         stateMachine.sendEvent(Mono.just(

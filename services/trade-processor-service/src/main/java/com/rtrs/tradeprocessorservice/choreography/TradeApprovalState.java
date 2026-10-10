@@ -8,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -15,6 +16,8 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 public class TradeApprovalState {
+
+    private static final Set<String> TERMINAL_STATUSES = Set.of("APPROVED", "REJECTED", "TIMEOUT");
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -79,12 +82,18 @@ public class TradeApprovalState {
     }
 
     public void markRiskCleared() {
+        if (isTerminal()) {
+            return;
+        }
         this.riskCleared = true;
         this.riskClearedAt = Instant.now();
         updateStatus();
     }
 
     public void markAmlCleared() {
+        if (isTerminal()) {
+            return;
+        }
         this.amlCleared = true;
         this.amlClearedAt = Instant.now();
         updateStatus();
@@ -104,8 +113,24 @@ public class TradeApprovalState {
         return riskCleared && amlCleared;
     }
 
+    // Once a trade reaches any of these, no further verdict may change its outcome
+    public boolean isTerminal() {
+        return TERMINAL_STATUSES.contains(this.status);
+    }
+
+    // Distinct from isTerminal(): APPROVED is terminal but must still execute
+    // REJECTED/TIMEOUT must never execute, no matter what arrives afterwards
+    public boolean isRejected() {
+        return "REJECTED".equals(this.status) || "TIMEOUT".equals(this.status);
+    }
+
     // Dono signals aa gye to APPROVED, warna current state maintain kro
+    // Terminal states are never overwritten — a verdict arriving after the
+    // choreography timeout must not resurrect an already-rejected trade
     private void updateStatus() {
+        if (isTerminal()) {
+            return;
+        }
         if (riskCleared && amlCleared) {
             this.status = "APPROVED";
         } else if (riskCleared) {

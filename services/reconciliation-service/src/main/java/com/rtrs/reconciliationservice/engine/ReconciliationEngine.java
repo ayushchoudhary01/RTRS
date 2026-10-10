@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +57,39 @@ public class ReconciliationEngine {
         tradeFact.markBroken();
         breakRepository.saveAll(newBreaks);
         return new TradeCheckResult(tradeId, newBreaks.size(), 0);
+    }
+
+    // Ledger-side sweep: an entry posted for a trade that has no execution record at all
+    // check() cannot detect this because it is keyed on an existing TradeFact
+    @Transactional
+    public int checkOrphanedLedgerFacts() {
+        Instant cutoff = Instant.now().minusSeconds(graceWindowSeconds);
+        List<LedgerFact> orphans = ledgerFactRepository.findOrphanedBefore(cutoff);
+
+        int raised = 0;
+        for (LedgerFact orphan : orphans) {
+            boolean alreadyRaised = breakRepository
+                    .findByTradeIdAndStatus(orphan.getTradeId(), BreakStatus.OPEN)
+                    .stream()
+                    .anyMatch(b -> b.getBreakType() == BreakType.MISSING_IN_PROCESSOR);
+
+            if (alreadyRaised) {
+                continue;
+            }
+
+            breakRepository.save(ReconciliationBreak.raise(
+                    orphan.getTradeId(), BreakType.MISSING_IN_PROCESSOR, BreakSeverity.CRITICAL,
+                    "trade execution record present",
+                    "ledger " + orphan.getEntryType() + " entry exists with no trade execution record"));
+            raised++;
+
+            log.error("Orphaned ledger entry detected. tradeId={}, journalId={}, entryType={}",
+                    orphan.getTradeId(), orphan.getJournalId(), orphan.getEntryType());
+        }
+
+        // Self-heals without extra code: once the trade fact arrives it becomes PENDING,
+        // check() runs, and a clean result resolves every OPEN break for that tradeId
+        return raised;
     }
 
     private List<ReconciliationBreak> evaluate(TradeFact tradeFact, List<LedgerFact> ledgerFacts) {
@@ -108,11 +142,17 @@ public class ReconciliationEngine {
                         "debit == credit", "debit=" + debitAmount + ", credit=" + creditAmount));
             }
 
+            // Both legs are checked independently against the expected notional — checking
+            // only the debit would leave a credit-side discrepancy detectable solely as a
+            // side effect of UNBALANCED_DOUBLE_ENTRY, not by this check in its own right
             BigDecimal expectedAmount = tradeFact.getQuantity().multiply(tradeFact.getLimitPrice());
-            if (debitAmount.compareTo(expectedAmount) != 0) {
+            boolean debitMismatch = debitAmount.compareTo(expectedAmount) != 0;
+            boolean creditMismatch = creditAmount.compareTo(expectedAmount) != 0;
+            if (debitMismatch || creditMismatch) {
                 breaks.add(ReconciliationBreak.raise(
                         tradeFact.getTradeId(), BreakType.AMOUNT_MISMATCH, BreakSeverity.HIGH,
-                        expectedAmount.toString(), debitAmount.toString()));
+                        expectedAmount.toString(),
+                        "debit=" + debitAmount + ", credit=" + creditAmount));
             }
 
             if (!debit.get().getCurrency().equals(tradeFact.getCurrency())

@@ -93,7 +93,9 @@ public class RiskEvaluationService {
                     .setAccountId(accountId.toString())
                     .setBreachType(mapToBreachType(chainResult.getBreachedRule()))
                     .setBreachValue(notionalUsd.doubleValue())
-                    .setThresholdValue(0.0) // threshold value — PositionLimitRule se expose krna padega baad mein
+                    .setThresholdValue(chainResult.getThresholdValue() != null
+                            ? chainResult.getThresholdValue().doubleValue()
+                            : 0.0)
                     .setRiskScore(0)
                     .setReason(chainResult.getBreachReason())
                     .setBreachedAt(Instant.now())
