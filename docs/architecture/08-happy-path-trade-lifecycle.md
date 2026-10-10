@@ -56,7 +56,7 @@ every rule.
 
 Both events are published via **Avro**, not JSON — this is the one moment
 in the pipeline where the wire format switches from the outbox's JSON to
-direct Avro publish (see `docs/system-design/00-overview.md` for why).
+direct Avro publish (see `docs/architecture/00-overview.md` for why).
 
 ## 3. Aggregation and Execution
 
@@ -133,8 +133,8 @@ both legs of the double-entry are present and balanced.
 
 Seven services, one trade, zero unexplained failures. The choreography saga
 correctly aggregated two independent verdicts under concurrent access, the
-state machine and outbox pattern correctly carried the trade through
-execution without losing data, double-entry bookkeeping balanced correctly,
+outbox pattern carried the trade through execution without losing data,
+double-entry bookkeeping balanced correctly,
 a T+2 settlement instruction was created with the right date math, and an
 independent reconciliation pass — using none of the same code paths as the
 trade pipeline itself — verified everything matched. This is what "the

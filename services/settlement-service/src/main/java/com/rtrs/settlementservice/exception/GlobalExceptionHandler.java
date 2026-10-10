@@ -1,6 +1,7 @@
 package com.rtrs.settlementservice.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,7 +10,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.Instant;
 import java.util.Map;
 
+// Must outrank rtrs-common's shared advice, which also has an Exception catch-all
+// without this the shared one could win and turn a 404 into a 500
 @Slf4j
+@Order(0)
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

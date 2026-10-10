@@ -97,7 +97,6 @@ rtrs:
   kafka:
     topics:
       trade-submitted: trade.submitted.v1
-      trade-rejected: trade.rejected.v1
 
 logging:
   level:

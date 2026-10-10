@@ -4,6 +4,8 @@ import com.rtrs.common.enums.ErrorCode;
 import com.rtrs.common.response.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.stream.Collectors;
 
+// Lowest precedence so a service-local @RestControllerAdvice always wins
+// settlement-service and reconciliation-service both define their own with an
+// Exception catch-all, and their behaviour must not change
+@Order(Ordered.LOWEST_PRECEDENCE)
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

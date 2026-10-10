@@ -43,7 +43,7 @@ these; trade-processor consumes them):
 - `AmlClearedEvent`, `AmlFlaggedEvent`
 
 **Schema exists, but the wire format actually used is plain JSON via the
-outbox pattern** (see `docs/system-design/00-overview.md` for why):
+outbox pattern** (see `docs/architecture/00-overview.md` for why):
 - `TradeSubmittedEvent`, `TradeExecutedEvent`, `TradeRejectedEvent`
 - `LedgerEntryCreatedEvent`
 
@@ -94,18 +94,22 @@ current request's authenticated user against the required role, throwing
 if it doesn't match. The implementation reads the authenticated user from
 `request.getAttribute("authenticatedUser")`.
 
-**The gap**: nothing in any service currently sets that request attribute.
-There's no Spring Security filter or interceptor anywhere in the codebase
-that takes an incoming JWT, validates it via `JwtValidator`, and populates
-`authenticatedUser` on the request before a controller method runs. The
-validator and the enforcement aspect are both real, correct, and ready —
-they're just not connected to anything yet, because building the actual
-filter (and the auth-service that would issue tokens in the first place)
-was deliberately deferred. Every `@RequiresRole`-annotated method in the
-codebase today would fail at runtime, not because the security logic is
-wrong, but because nothing upstream of it has run yet.
+**The gap**: the whole RBAC layer is built but not connected. No controller
+in any service carries a `@RequiresRole` annotation, and nothing populates
+`request.getAttribute("authenticatedUser")` in the first place — there is no
+Spring Security filter or interceptor anywhere that takes an incoming JWT,
+validates it via `JwtValidator`, and attaches the resolved principal before a
+controller method runs.
 
-This is consistent with the system-wide pattern of `@RequiresRole`
-annotations being present on controller methods across services but
-stripped of enforcement weight until the auth piece exists — documented as
-deliberately deferred, not forgotten.
+This is deliberate rather than forgotten. Enforcing auth across every endpoint
+makes end-to-end testing of the trade pipeline considerably harder: every
+`curl`, every Postman call and every load-test run would first need a valid
+token from a token-issuing service that does not exist yet. The validation
+logic itself is real and correct; what is missing is the filter that calls it
+and the auth-service that would mint the tokens, and both were scoped out
+rather than half-built. `docs/future/006-api-gateway.md` covers doing JWT
+validation once at a gateway rather than per-service, which is where this
+would most likely land.
+
+The practical consequence today, stated plainly: every endpoint in every
+service is open, with no authentication check of any kind.

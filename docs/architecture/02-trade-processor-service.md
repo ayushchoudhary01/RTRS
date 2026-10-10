@@ -75,27 +75,24 @@ three.
 **`CompensatingActionService`** — writes the `trade.rejected.v1` outbox
 event when the timeout handler gives up on a trade.
 
-### State Machine
-
-**`TradeStateMachineConfig`** — a Spring State Machine definition
-(`SUBMITTED → RISK_CLEARED → AML_CLEARED → EXECUTING → EXECUTED`, with
-`REJECTED` as a terminal state from several points). Configured with
-`@EnableStateMachineFactory`, not `@EnableStateMachine` — the factory variant
-is what allows a **separate state machine instance per trade**, keyed by
-`tradeId.toString()`. The plain `@EnableStateMachine` annotation creates one
-shared singleton instance, which would corrupt state under any concurrency —
-two trades executing at the same time would be racing on the same machine.
-See `docs/troubleshooting` for this fix's history.
+### Execution
 
 **`TradeExecutionService`** — when the aggregator says both sides have
 cleared, this is what actually runs. It fetches the trade's
 `TradeApprovalState` (for the `quantity`/`limitPrice`/`currency` fields it
-needs), drives the per-trade state machine to `EXECUTED`, and writes the
-`trade.executed.v1` outbox event with the full payload — `tradeId`,
-`accountId`, `instrumentId`, `quantity`, `limitPrice`, `currency`,
+needs), refuses to proceed if the trade has already been rejected or timed
+out, and writes the `trade.executed.v1` outbox event with the full payload —
+`tradeId`, `accountId`, `instrumentId`, `quantity`, `limitPrice`, `currency`,
 `executionStatus`, `executedAt`. This enriched payload is what lets ledger,
 settlement, and reconciliation all work from the same event without any of
 them needing to call back to trade-ingestion for the original trade details.
+
+There is no separate workflow engine here. An earlier version used Spring
+State Machine with a per-trade instance from a `StateMachineFactory`; it was
+removed once it became clear that `TradeApprovalState` — a locked row with two
+independent clearance flags — already is the state machine, and keeping both
+would have meant two durable records of one trade's state. `ADR 005` has the
+full reasoning.
 
 ### Kafka
 

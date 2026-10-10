@@ -134,7 +134,7 @@ and publishes — lives in [`docs/architecture/`](./docs/architecture).
 | Database | PostgreSQL 17, one instance per service, Flyway-managed |
 | Caching | Redis (idempotency keys) |
 | Batch Processing | Spring Batch 6 |
-| Orchestration (local) | Spring State Machine (per-trade keyed instances) |
+| Saga coordination | Choreography over Kafka, with a pessimistically-locked approval row per trade |
 | Observability | Prometheus, Grafana, Loki, Tempo (the "LGTM" stack) |
 | Build | Gradle (services), Maven (shared libraries) |
 | Infra | Docker Compose |

@@ -1,9 +1,11 @@
 # 006 — API Gateway
 
 ## Current State
-Clients call `trade-ingestion-service` directly on port 8086. JWT validation
-happens inside each service via `rtrs-security` shared lib. No rate limiting,
-no circuit breakers at the entry point.
+Clients call `trade-ingestion-service` directly on port 8086. There is no
+authentication on any endpoint — `rtrs-security` provides a working
+`JwtValidator` and RBAC aspect, but nothing is wired into the request pipeline
+(see `docs/architecture/10-shared-libraries.md`). No rate limiting, no circuit
+breakers at the entry point.
 
 ## Planned Improvement
 Spring Cloud Gateway as the single entry point for all external traffic.

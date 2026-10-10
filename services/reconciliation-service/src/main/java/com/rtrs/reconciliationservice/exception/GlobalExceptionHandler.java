@@ -1,5 +1,6 @@
 package com.rtrs.reconciliationservice.exception;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -7,6 +8,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
 
+// Must outrank rtrs-common's shared advice so this 404 is not swallowed by its
+// Exception catch-all
+@Order(0)
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

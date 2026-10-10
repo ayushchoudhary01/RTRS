@@ -6,17 +6,11 @@ import com.rtrs.tradeprocessorservice.choreography.ApprovalStateRepository;
 import com.rtrs.tradeprocessorservice.choreography.TradeApprovalState;
 import com.rtrs.tradeprocessorservice.outbox.OutboxEvent;
 import com.rtrs.tradeprocessorservice.outbox.OutboxEventRepository;
-import com.rtrs.tradeprocessorservice.statemachine.TradeApprovalStatus;
-import com.rtrs.tradeprocessorservice.statemachine.TradeEvent;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.statemachine.config.StateMachineFactory;
-import org.springframework.statemachine.StateMachine;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.Map;
@@ -29,13 +23,12 @@ public class TradeExecutionService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
-    private final StateMachineFactory<TradeApprovalStatus, TradeEvent> stateMachineFactory;
     private final ApprovalStateRepository approvalStateRepository;
 
     @Value("${rtrs.kafka.topics.trade-executed}")
     private String tradeExecutedTopic;
 
-    // Dono approvals aa gye — state machine se execute kro aur outbox me event dalo
+    // Both approvals received — write the executed event to the outbox
     @Transactional
     public void execute(UUID tradeId, String instrumentId) {
         log.info("Executing trade. tradeId={}", tradeId);
@@ -50,14 +43,6 @@ public class TradeExecutionService {
                     tradeId, state.getStatus());
             return;
         }
-
-        StateMachine<TradeApprovalStatus, TradeEvent> stateMachine = stateMachineFactory.getStateMachine(tradeId.toString());
-        stateMachine.startReactively().subscribe();
-        stateMachine.sendEvent(Mono.just(
-                MessageBuilder.withPayload(TradeEvent.EXECUTE)
-                        .setHeader("tradeId", tradeId.toString())
-                        .build()
-        )).subscribe();
 
         try {
             String payload = objectMapper.writeValueAsString(Map.of(

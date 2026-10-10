@@ -106,28 +106,32 @@ traced through every service's logs:
    service knows what the other concluded — they evaluate in parallel and
    reach the same correct verdict from different rules.
 
-See `docs/system-design/08-happy-path-trade-lifecycle.md` and
+See `docs/architecture/08-happy-path-trade-lifecycle.md` and
 `09-rejection-paths.md` for the full traced walkthroughs.
 
-## Known Current Issues
+## Two Bugs Found and Fixed During Review
 
-Two import-level bugs exist in the current codebase, found during a full
-line-by-line review:
+A full line-by-line pass over the codebase, done before these docs were
+written, turned up two import-level bugs. Both have since been fixed:
 
-- `ledger-service/kafka/TradeExecutedConsumer.java` imports
-  `tools.jackson.databind` (Jackson 3.x namespace) instead of
-  `com.fasterxml.jackson.databind` (the Jackson 2.x namespace every other
-  service uses). This will fail to compile against the actual classpath.
-- `settlement-service/api/SettlementController.java` imports
+- `ledger-service/kafka/TradeExecutedConsumer.java` imported
+  `tools.jackson.databind` (the Jackson 3.x namespace) instead of
+  `com.fasterxml.jackson.databind`, which every other service uses. It would
+  not have compiled against the actual classpath.
+- `settlement-service/api/SettlementController.java` imported
   `org.apache.kafka.common.errors.ResourceNotFoundException` instead of the
-  service's own `com.rtrs.settlementservice.exception.ResourceNotFoundException`.
-  It compiles (both are valid `RuntimeException` subtypes) but the custom
-  `GlobalExceptionHandler` won't catch Kafka's version, so a 404 case falls
-  through to a generic 500.
+  service's own exception type. It compiled, since both are valid
+  `RuntimeException` subtypes, but a `@RestControllerAdvice` only matches the
+  exact class it is registered against — so a missing-resource case bypassed
+  the custom `GlobalExceptionHandler` and fell through to a generic 500
+  instead of a 404.
 
-Both are documented precisely in
-`docs/troubleshooting/009-ambiguous-imports.md` — the fix pattern is known
-and correct, it simply wasn't carried into these two specific files.
+Both bugs share the same shape: a generically-named class that more than one
+library on the classpath defines. The pattern, and the habit of checking the
+fully qualified import rather than trusting autocomplete, is written up in
+`docs/troubleshooting/009-ambiguous-imports.md`.
+
+For what is deliberately not built yet, see `docs/future/`.
 
 ## How to Read the Rest of These Docs
 

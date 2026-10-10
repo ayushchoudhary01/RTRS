@@ -34,15 +34,10 @@ dependencies {
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
-    // spring state machine — local orchestration within trade-processor
-    implementation("org.springframework.statemachine:spring-statemachine-core:4.0.0")
-
     // kafka + avro
     implementation("org.springframework.kafka:spring-kafka")
     implementation("io.confluent:kafka-avro-serializer:7.7.1")
 
-    // redis
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
     // observability
     implementation("io.micrometer:micrometer-registry-prometheus")
