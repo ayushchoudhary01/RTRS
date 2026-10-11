@@ -1,27 +1,71 @@
 @import 'tailwindcss';
 
-/* Operations-console palette — dense, dark, low-chroma so the semantic status
-   colours are the only thing that draws the eye */
 @theme {
-  --color-surface-base: oklch(0.17 0.012 265);
-  --color-surface-raised: oklch(0.22 0.014 265);
-  --color-surface-overlay: oklch(0.26 0.016 265);
-  --color-surface-border: oklch(0.32 0.018 265);
+  --color-surface-base: oklch(0.16 0.014 266);
+  --color-surface-raised: oklch(0.21 0.017 266);
+  --color-surface-overlay: oklch(0.26 0.02 266);
+  --color-surface-border: oklch(0.32 0.022 266);
 
-  --color-content-primary: oklch(0.95 0.005 265);
-  --color-content-secondary: oklch(0.74 0.012 265);
-  --color-content-muted: oklch(0.58 0.014 265);
+  --color-content-primary: oklch(0.96 0.005 266);
+  --color-content-secondary: oklch(0.75 0.014 266);
+  --color-content-muted: oklch(0.59 0.016 266);
 
-  --color-accent: oklch(0.72 0.14 235);
-  --color-accent-strong: oklch(0.63 0.16 235);
+  --color-accent: oklch(0.74 0.15 235);
+  --color-accent-strong: oklch(0.64 0.18 240);
 
   /* Semantic states, mapped to the vocabulary the backend actually uses */
-  --color-state-cleared: oklch(0.76 0.15 155);
-  --color-state-pending: oklch(0.81 0.14 85);
-  --color-state-rejected: oklch(0.69 0.19 25);
-  --color-state-neutral: oklch(0.62 0.02 265);
+  --color-state-cleared: oklch(0.77 0.17 155);
+  --color-state-pending: oklch(0.83 0.16 85);
+  --color-state-rejected: oklch(0.68 0.21 22);
+  --color-state-neutral: oklch(0.62 0.02 266);
+
+  /* One hue per pipeline stage, so a stage is recognisable before its label is read */
+  --color-stage-submit: oklch(0.74 0.15 235);
+  --color-stage-risk: oklch(0.75 0.17 300);
+  --color-stage-aml: oklch(0.78 0.16 340);
+  --color-stage-execute: oklch(0.77 0.17 155);
+  --color-stage-ledger: oklch(0.76 0.15 195);
+  --color-stage-settle: oklch(0.80 0.15 60);
+  --color-stage-recon: oklch(0.74 0.14 265);
 
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', ui-monospace, monospace;
+
+  --animate-pulse-ring: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-rise: rise 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-flow: flow 1.6s linear infinite;
+}
+
+@keyframes pulse-ring {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    opacity: 0.75;
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Travels along a connector while the next stage is still waiting on Kafka */
+@keyframes flow {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 16px 0;
+  }
 }
 
 @layer base {
@@ -31,11 +75,15 @@
 
   body {
     @apply bg-surface-base text-content-primary antialiased;
+    background-image:
+      radial-gradient(60rem 30rem at 15% -10%, oklch(0.3 0.06 266 / 0.5), transparent),
+      radial-gradient(45rem 28rem at 95% 0%, oklch(0.28 0.07 300 / 0.35), transparent);
+    background-attachment: fixed;
     font-feature-settings: 'cv05', 'ss01';
   }
 
-  /* IDs, amounts and hashes are compared by eye constantly in this app, so they
-     get tabular figures everywhere rather than per-component overrides */
+  /* IDs, amounts and hashes are compared by eye constantly, so they get tabular
+     figures everywhere rather than per-component overrides */
   .numeric {
     @apply font-mono tabular-nums;
   }
@@ -43,11 +91,12 @@
 
 @layer components {
   .panel {
-    @apply rounded-lg border border-surface-border bg-surface-raised;
+    @apply rounded-xl border border-surface-border bg-surface-raised/80 backdrop-blur-sm;
   }
 
   .panel-header {
-    @apply border-b border-surface-border px-4 py-3 text-sm font-medium text-content-secondary;
+    @apply flex items-center justify-between gap-3 border-b border-surface-border px-4 py-3
+           text-sm font-medium text-content-secondary;
   }
 
   .field-label {
@@ -55,8 +104,29 @@
   }
 
   .field-input {
-    @apply w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm
-           text-content-primary placeholder:text-content-muted
-           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
+    @apply w-full rounded-lg border border-surface-border bg-surface-base/70 px-3 py-2 text-sm
+           text-content-primary transition-colors placeholder:text-content-muted
+           focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30;
+  }
+
+  /* Tailwind v4 cannot @apply a custom component class, so the shared button
+     styling is repeated rather than composed from a .btn base */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
+           transition-all disabled:cursor-not-allowed disabled:opacity-50
+           bg-accent-strong text-white hover:bg-accent hover:shadow-lg
+           hover:shadow-accent/20 active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium
+           transition-all disabled:cursor-not-allowed disabled:opacity-50
+           border border-surface-border text-content-secondary
+           hover:border-accent/50 hover:text-content-primary active:scale-[0.98];
+  }
+
+  .data-row {
+    @apply border-b border-surface-border/60 transition-colors last:border-0
+           hover:bg-surface-overlay/50;
   }
 }
