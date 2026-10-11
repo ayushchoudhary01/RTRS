@@ -87,12 +87,11 @@ out, and writes the `trade.executed.v1` outbox event with the full payload —
 settlement, and reconciliation all work from the same event without any of
 them needing to call back to trade-ingestion for the original trade details.
 
-There is no separate workflow engine here. An earlier version used Spring
-State Machine with a per-trade instance from a `StateMachineFactory`; it was
-removed once it became clear that `TradeApprovalState` — a locked row with two
-independent clearance flags — already is the state machine, and keeping both
-would have meant two durable records of one trade's state. `ADR 005` has the
-full reasoning.
+There is no separate workflow engine here. `TradeApprovalState` — a locked row
+with two independent clearance flags — is the complete record of a trade's
+approval progress, and a second mechanism holding the same state would mean two
+durable records of one trade that have to agree. `ADR 005` has the full
+reasoning.
 
 ### Kafka
 

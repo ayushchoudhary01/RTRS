@@ -43,8 +43,11 @@ export function LedgerPage() {
   }
 
   const rows = entries.data ?? []
-  const verdict = verify.data as { valid?: boolean; intact?: boolean } | undefined
-  const chainOk = verdict?.valid ?? verdict?.intact
+  // The endpoint returns { chainIntact, accountId, verifiedAt }. Anything other
+  // than an explicit true is reported as unverified — a missing or renamed field
+  // must never render as a passing integrity check
+  const verdict = verify.data as { chainIntact?: boolean } | undefined
+  const chainOk = verdict?.chainIntact === true
 
   return (
     <div className="space-y-5">
@@ -89,11 +92,11 @@ export function LedgerPage() {
           </button>
           {verify.isSuccess && (
             <p
-              className={`mt-2 text-xs ${chainOk === false ? 'text-state-rejected' : 'text-state-cleared'}`}
+              className={`mt-2 text-xs ${chainOk ? 'text-state-cleared' : 'text-state-rejected'}`}
             >
-              {chainOk === false
-                ? '✕ chain broken — a row was altered'
-                : '✓ every hash recomputed and matched'}
+              {chainOk
+                ? '✓ every hash recomputed and matched'
+                : '✕ chain did not verify'}
             </p>
           )}
           {verify.isError && (

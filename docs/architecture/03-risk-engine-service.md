@@ -4,7 +4,7 @@
 
 Evaluates every submitted trade against a chain of risk rules — position
 limits, value-at-risk, concentration — and publishes a verdict directly to
-Kafka. No outbox, no intermediate state machine. Consume, evaluate, publish.
+Kafka. No outbox, no intermediate persistence. Consume, evaluate, publish.
 
 | | |
 |---|---|

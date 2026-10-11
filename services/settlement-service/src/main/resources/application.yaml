@@ -84,6 +84,8 @@ rtrs:
       settlement-escalated: settlement.escalated.v1
 
   settlement:
+    # T+2, the standard equities cycle — run with the demo profile to compress this
+    # to same-day so the batch can be demonstrated (see application-demo.yaml)
     settlement-cycle-days: 2
     max-retry-attempts: 3
     eod-cron: "0 0 18 * * *"

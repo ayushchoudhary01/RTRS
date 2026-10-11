@@ -1,0 +1,17 @@
+# Demo profile — compresses the settlement cycle so the batch pipeline can be
+# watched end to end in about a minute instead of two days
+#
+# Activate with:  --spring.profiles.active=demo
+#
+# Only the timings change. Confirm, net, DVP validation, retry and escalation all
+# run exactly as they do by default — the settlement date is a stored date compared
+# against today, never a countdown, so shortening the cycle does not skip any step
+#
+# The committed default stays T+2 at 18:00, which is what a real equities desk runs
+# and what the architecture docs describe. See docs/architecture/06-settlement-service.md
+rtrs:
+  settlement:
+    # Settle same day instead of trade date + 2 business days
+    settlement-cycle-days: 0
+    # Every minute instead of a single 18:00 end-of-day run
+    eod-cron: "0 * * * * *"

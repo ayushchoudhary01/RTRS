@@ -46,7 +46,7 @@ idempotency, create the `TradeEntity`, write it and an `OutboxEvent` in one
 `@Transactional` method, return a response.
 
 **`TradeEntity`** — not a plain data bag. It exposes a `transitionStatus()`
-method that enforces a state machine over legal status transitions
+method that enforces the legal status transitions
 (`PENDING → VALIDATED → RISK_APPROVED → AML_CLEARED → EXECUTED → SETTLING →
 SETTLED` / `FAILED`), throwing `IllegalStateException` on any illegal jump.
 This is "tell, don't ask" domain modelling — callers ask the entity to

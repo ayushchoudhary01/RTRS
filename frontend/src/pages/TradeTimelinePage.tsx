@@ -11,7 +11,13 @@ import {
 import { CopyableId, EmptyState, ErrorState, Panel, Spinner } from '../components/Panel'
 import { PipelineStage, StageDetails, type StageState } from '../components/PipelineStage'
 import { StatusPill } from '../components/StatusPill'
-import { elapsedSince, formatAmount, formatTime, shortHash } from '../lib/format'
+import {
+  elapsedSince,
+  formatAmount,
+  formatTime,
+  settlementCycleLabel,
+  shortHash,
+} from '../lib/format'
 
 export function TradeTimelinePage() {
   const { tradeId } = useParams()
@@ -316,7 +322,12 @@ export function TradeTimelinePage() {
           {s && (
             <StageDetails
               items={[
-                ['Settlement date', `${s.settlementDate} (T+2)`],
+                [
+                  'Settlement date',
+                  [s.settlementDate, settlementCycleLabel(trade.data?.createdAt, s.settlementDate)]
+                    .filter(Boolean)
+                    .join(' · '),
+                ],
                 ...(s.failureReason
                   ? ([['Failure', <span className="text-state-rejected">{s.failureReason}</span>]] as Array<
                       [string, React.ReactNode]

@@ -1,10 +1,8 @@
 # 005 — Choreography Saga with a Locked Approval Row
 
 ## Status
-Accepted. Amended after implementation — the original version of this ADR described
-Spring State Machine as the component driving the approval lifecycle. It never did,
-and it has since been removed. See "What Actually Tracks State" and "Why Not Spring
-State Machine" below.
+Accepted. See "What Actually Tracks State" below for the component that holds the
+approval lifecycle.
 
 ## Decision
 Cross-service communication is purely choreography-based over Kafka. No central
@@ -98,43 +96,33 @@ of three. The honest cost is that every rejection takes the full 30 seconds even
 when the reason was known instantly. See
 `docs/architecture/09-rejection-paths.md` for two traced examples.
 
-## Why Not Spring State Machine
+## Why Two Flags, Not a Single Status Column
 
-An earlier version of this service used Spring State Machine for the approval
-lifecycle: a `StateMachineConfigurerAdapter` declaring nine transitions, obtained
-per trade from a `StateMachineFactory`. It has been removed — the config class, the
-`TradeApprovalStatus`/`TradeEvent` enums, and the `spring-statemachine-core`
-dependency are all gone.
+The obvious alternative is one `status` column walked through a fixed sequence of
+values, driven either by a workflow library or a hand-rolled transition table. The
+row such an engine would sit on top of already holds everything it would:
 
-The reason is not that it was hard to wire. It is that the row it would have sat on
-top of already *is* the state machine:
-
-- **A state machine has one current state. This workflow needs two independent
-  facts.** "Risk cleared, AML pending" and "AML cleared, risk pending" are both
-  legitimate and must be distinguishable, and either can come first. Two booleans
-  express that directly; a single state enum has to encode the cross-product.
+- **One status column holds one fact. This workflow needs two independent ones.**
+  "Risk cleared, AML pending" and "AML cleared, risk pending" are both legitimate
+  and must be distinguishable, and either can come first. Two booleans express that
+  directly; a single enum has to encode the cross-product.
 - **The aggregation needs a locked database row anyway.** The pessimistic lock that
   serializes the two consumer threads has to live on a row in this service's
   database. Once that row exists, it already *is* the state.
 - **The row carries more than state.** The quantity/price/currency fields and
-  `createdAt` are needed by `TradeExecutionService` and the timeout scan, and have
-  no place in a state-machine engine.
-- **Two stores for one trade's state would be worse.** Wiring the machine properly
-  would mean persisting it alongside `TradeApprovalState`, giving one trade two
-  durable state records that must agree. Redundant state in a financial system is a
+  `createdAt` are needed by `TradeExecutionService` and the timeout scan, and would
+  sit outside any engine's model.
+- **Two stores for one trade's state would be worse.** An engine with its own
+  persistence, running alongside `TradeApprovalState`, gives one trade two durable
+  state records that must agree. Redundant state in a financial system is a
   liability, not a feature.
 
-### What the attempt was worth
-The config was originally written with `@EnableStateMachine`, which creates a
-single shared machine instance for the whole application — that corrupts under any
-concurrency, since two trades executing at once would race on the same state
-object. Switching it to `@EnableStateMachineFactory` gave a separate instance per
-trade, keyed by `tradeId`.
-
-Chasing that distinction is what surfaced the per-trade concurrency problem in the
-first place, and that problem is now solved properly, at the layer where it
-actually mattered: the pessimistic lock on `TradeApprovalState`. The library was
-removed; the understanding it produced is what the lock is for.
+The concurrency requirement is the decisive one. Two consumer threads can update
+the same trade's clearances at the same moment, so correctness depends on a
+pessimistic lock held across the whole read-modify-write —
+`findByTradeIdForUpdate()`. That lock has to be on a database row. Once the row
+exists and is locked, anything else holding the same state adds a consistency
+problem without solving one.
 
 ## Why Not Temporal
 Temporal is the production-grade choice for durable workflow orchestration and is
@@ -148,8 +136,9 @@ correct answer, not a hand-rolled approval row.
 - **Central saga orchestrator** — single point of failure, and it would require
   risk-engine and aml-engine to expose synchronous evaluation endpoints they do not
   have
-- **Spring State Machine as the lifecycle engine** — tried, then removed; see
-  above. It duplicates state the aggregation already has to hold under a lock
+- **A single status column driven by a transition table** — cannot represent two
+  independent clearances without encoding their cross-product, and duplicates state
+  the aggregation already has to hold under a lock
 - **Temporal** — correct at larger scale, disproportionate infrastructure here
 - **Optimistic locking on the approval row** — a version-and-retry approach would
   work for the flags, but the same lock also serializes ledger-side hash chaining

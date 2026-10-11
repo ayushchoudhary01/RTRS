@@ -135,6 +135,29 @@ exact batch execution.
 which runs steps 1–2 directly and then launches the Spring Batch job via
 `JobOperator` (not the deprecated `JobLauncher`) for step 3.
 
+## The Demo Profile, and Why the Default Isn't It
+
+T+2 at 18:00 is correct and is what the committed config uses, but it makes this
+service impossible to demonstrate — a trade submitted now settles the day after
+tomorrow, assuming the service happens to be running at 18:00 that day. Spring's
+`@Scheduled` cron does not catch up missed firings, so a laptop that was off at
+18:00 simply waits for the next one.
+
+`application-demo.yaml` compresses the cycle to same-day with a one-minute
+scheduler, activated with `--spring.profiles.active=demo`. Nothing else changes:
+`confirmDueInstructions()` selects on `settlementDate <= today`, a stored date
+compared against the current one rather than a countdown, so a shorter cycle moves
+the comparison forward without skipping confirmation, netting, DVP validation,
+retry or escalation.
+
+The reason the fast values are *not* the default is netting. A `NettedObligation`
+only nets something when several instructions share an account, instrument and
+settlement date, which requires them to accumulate before the batch runs. Under
+same-day settlement on a one-minute cron, essentially every obligation would
+contain exactly one instruction, and the netting step — one of the more
+substantial pieces of this service — would never actually combine anything. The
+demo profile is a presentation convenience; the default is the design.
+
 ## Settled vs Failed: Different Publish Guarantees, Same Reasoning as Elsewhere
 
 `settlement.settled.v1` goes through the **outbox** — it's correctness-

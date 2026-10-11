@@ -57,6 +57,25 @@ export function shortHash(hash: string | null | undefined) {
   return `${hash.slice(0, 6)}…${hash.slice(-4)}`
 }
 
+/** Settlement cycle actually applied, derived from the two dates rather than
+ *  assumed — the demo profile settles same day, so a hardcoded T+2 would lie */
+export function settlementCycleLabel(
+  tradeCreatedAt: string | null | undefined,
+  settlementDate: string | null | undefined,
+) {
+  if (!tradeCreatedAt || !settlementDate) return null
+
+  const traded = new Date(tradeCreatedAt)
+  const settles = new Date(`${settlementDate}T00:00:00`)
+  if (Number.isNaN(traded.getTime()) || Number.isNaN(settles.getTime())) return null
+
+  const tradedDay = Date.UTC(traded.getFullYear(), traded.getMonth(), traded.getDate())
+  const settlesDay = Date.UTC(settles.getFullYear(), settles.getMonth(), settles.getDate())
+  const days = Math.round((settlesDay - tradedDay) / 86_400_000)
+
+  return days < 0 ? null : `T+${days}`
+}
+
 /** Notional, computed the same way every backend service computes it */
 export function notionalOf(quantity: string, limitPrice: string) {
   const n = Number(quantity) * Number(limitPrice)

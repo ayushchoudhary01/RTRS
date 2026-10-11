@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 
@@ -60,7 +61,11 @@ public class LedgerService {
 
         // DEBIT entry — securities outflow (buyer pays)
         UUID debitId = UUID.randomUUID();
-        Instant debitTime = Instant.now();
+        // Postgres TIMESTAMPTZ keeps microseconds and rounds anything finer, so the
+        // hashed instant has to be at microsecond precision already — otherwise what
+        // comes back from the database is not what was hashed and the chain can never
+        // be re-verified
+        Instant debitTime = Instant.now().truncatedTo(ChronoUnit.MICROS);
         BigDecimal balanceAfterDebit = balance.getBalance().subtract(totalAmount);
         String debitHash = hashChainService.computeHash(prevHash, debitId, accountId,
                 "DEBIT", totalAmount, debitTime);
@@ -73,7 +78,7 @@ public class LedgerService {
 
         // CREDIT entry — securities inflow (buyer receives securities)
         UUID creditId = UUID.randomUUID();
-        Instant creditTime = Instant.now();
+        Instant creditTime = Instant.now().truncatedTo(ChronoUnit.MICROS);
         BigDecimal balanceAfterCredit = balance.getBalance().add(totalAmount);
         String creditHash = hashChainService.computeHash(debitHash, creditId, accountId,
                 "CREDIT", totalAmount, creditTime);

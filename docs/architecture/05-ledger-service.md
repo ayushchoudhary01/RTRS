@@ -66,6 +66,17 @@ on `@PrePersist`, for the same reason as the ID — the timestamp used to
 `@PrePersist` setting its own `Instant.now()` would silently diverge from
 whatever timestamp was used during hash computation.
 
+Passing the timestamp in explicitly was necessary but not sufficient. The same
+hazard showed up a third time, in a form neither fix above covers: `Instant.now()`
+carries sub-microsecond precision, while PostgreSQL `TIMESTAMPTZ` stores
+microseconds and *rounds* anything finer. The value handed to `computeHash()` and
+the value read back during verification therefore differed in their final digits,
+and `verifyChainIntegrity()` returned `false` for every account from the very
+beginning. The write path now truncates to microseconds — the precision the
+database can actually store — so the hashed and persisted values are identical by
+construction. See
+`docs/troubleshooting/012-hash-chain-verification-always-fails.md`.
+
 **`AccountBalance`** — a live, continuously-updated projection of an
 account's current balance, last entry hash, and entry count. Read via
 `findByAccountIdForUpdate()` with a pessimistic write lock during every
