@@ -1,75 +1,65 @@
-# React + TypeScript + Vite
+# Trade Flow Console
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An operations console for the Trade Flow post-trade platform. It submits trades and
+then follows them across all seven backend services — risk, AML, choreography,
+ledger, settlement and reconciliation — so the pipeline can be observed rather than
+read out of seven sets of log lines.
 
-Currently, two official plugins are available:
+React 19, TypeScript, Vite, Tailwind v4, TanStack Query, React Router.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Running it
 
-## React Compiler
+The backend services must already be up; this is a read-mostly view over them.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Opens on <http://localhost:5173>.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## How it reaches the services
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Each backend service owns a distinct `/api/v1` path prefix, so the Vite dev server
+fans requests out by prefix with no rewriting:
+
+| Path prefix | Service | Port |
+|---|---|---|
+| `/api/v1/trades` | trade-ingestion | 8086 |
+| `/api/v1/approvals` | trade-processor | 8087 |
+| `/api/v1/risk` | risk-engine | 8083 |
+| `/api/v1/aml` | aml-engine | 8084 |
+| `/api/v1/ledger`, `/api/v1/admin/ledger` | ledger | 8085 |
+| `/api/v1/settlement` | settlement | 8089 |
+| `/api/v1/reconciliation` | reconciliation | 8088 |
+
+The browser only ever talks to `localhost:5173`, so **no service needs CORS
+configuration**. The map lives in `vite.config.ts`.
+
+## Layout
 
 ```
+src/
+├── api/
+│   ├── types.ts     response types, mirroring the services' DTOs exactly
+│   ├── client.ts    fetch wrapper, ApiError
+│   └── hooks.ts     TanStack Query hooks, one per endpoint
+├── components/      AppShell, StatusPill, Panel and friends
+└── pages/           one per route
+```
+
+## Two conventions worth knowing
+
+**Monetary values stay strings.** `BigDecimal` arrives as a string over JSON and is
+never parsed to `number`, which would lose precision. Format at render time.
+
+**404 means "not yet", not "failed".** A trade still in flight genuinely has no
+ledger entry, settlement instruction or verdict, so those hooks resolve a 404 to
+`null` and stop retrying. That is what lets the timeline show a stage as pending
+instead of broken.
+
+## Status
+
+Foundation complete — proxy, API layer, query hooks, design system and routing all
+work. The four pages are placeholders; every hook they need already exists in
+`src/api/hooks.ts`.

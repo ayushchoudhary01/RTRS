@@ -1,111 +1,62 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import 'tailwindcss';
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* Operations-console palette — dense, dark, low-chroma so the semantic status
+   colours are the only thing that draws the eye */
+@theme {
+  --color-surface-base: oklch(0.17 0.012 265);
+  --color-surface-raised: oklch(0.22 0.014 265);
+  --color-surface-overlay: oklch(0.26 0.016 265);
+  --color-surface-border: oklch(0.32 0.018 265);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --color-content-primary: oklch(0.95 0.005 265);
+  --color-content-secondary: oklch(0.74 0.012 265);
+  --color-content-muted: oklch(0.58 0.014 265);
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --color-accent: oklch(0.72 0.14 235);
+  --color-accent-strong: oklch(0.63 0.16 235);
+
+  /* Semantic states, mapped to the vocabulary the backend actually uses */
+  --color-state-cleared: oklch(0.76 0.15 155);
+  --color-state-pending: oklch(0.81 0.14 85);
+  --color-state-rejected: oklch(0.69 0.19 25);
+  --color-state-neutral: oklch(0.62 0.02 265);
+
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-surface-base text-content-primary antialiased;
+    font-feature-settings: 'cv05', 'ss01';
+  }
+
+  /* IDs, amounts and hashes are compared by eye constantly in this app, so they
+     get tabular figures everywhere rather than per-component overrides */
+  .numeric {
+    @apply font-mono tabular-nums;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+@layer components {
+  .panel {
+    @apply rounded-lg border border-surface-border bg-surface-raised;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  .panel-header {
+    @apply border-b border-surface-border px-4 py-3 text-sm font-medium text-content-secondary;
   }
-}
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+  .field-label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wide text-content-muted;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+  .field-input {
+    @apply w-full rounded-md border border-surface-border bg-surface-base px-3 py-2 text-sm
+           text-content-primary placeholder:text-content-muted
+           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
   }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }

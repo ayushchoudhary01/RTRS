@@ -34,6 +34,17 @@ public class TradeIngestionService {
     @Value("${rtrs.kafka.topics.trade-submitted}")
     private String tradeSubmittedTopic;
 
+    // Read side — lets a client follow a trade after submitting it
+    @Transactional(readOnly = true)
+    public TradeResponse getTrade(UUID tradeId) {
+        return tradeRepository.findById(tradeId)
+                .map(TradeResponse::from)
+                .orElseThrow(() -> new DomainException(
+                        "No trade found with id: " + tradeId,
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        HttpStatus.NOT_FOUND));
+    }
+
     // Yhi hai core flow — ek hi transaction mein trade + outbox save hota hai
     @Transactional
     public TradeResponse submitTrade(TradeRequest request) {

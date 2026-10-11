@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/trades")
@@ -31,5 +33,11 @@ public class TradeController {
         return ResponseEntity
                 .status(HttpStatus.ACCEPTED)
                 .body(ApiResponse.ok(response, "Trade submitted successfully"));
+    }
+
+    // Read side — a submitted trade can now be followed by id
+    @GetMapping("/{tradeId}")
+    public ResponseEntity<TradeResponse> getTrade(@PathVariable UUID tradeId) {
+        return ResponseEntity.ok(tradeIngestionService.getTrade(tradeId));
     }
 }

@@ -1,6 +1,7 @@
 <div align="center">
 
-# RTRS — Real-Time Trade & Risk System
+# Trade Flow
+## RTRS — Real-Time Trade & Risk System
 
 ### Microservices platform simulating a trading desk's post-trade pipeline, built to learn the engineering patterns real trading systems use
 
