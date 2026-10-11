@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   useAccountBalance,
@@ -7,6 +7,7 @@ import {
 } from '../api/hooks'
 import { CopyableId, EmptyState, ErrorState, Panel, Spinner } from '../components/Panel'
 import { formatAmount, formatDateTime, shortHash } from '../lib/format'
+import { remember } from '../lib/lastViewed'
 
 export function LedgerPage() {
   const { accountId } = useParams()
@@ -16,6 +17,11 @@ export function LedgerPage() {
   const balance = useAccountBalance(accountId)
   const entries = useLedgerEntriesByAccount(accountId)
   const verify = useVerifyChainIntegrity()
+
+  // Keeps the nav pointing at this account across screen changes
+  useEffect(() => {
+    if (accountId) remember({ accountId })
+  }, [accountId])
 
   if (!accountId) {
     return (

@@ -9,6 +9,7 @@ import {
   useTrade,
 } from '../api/hooks'
 import { CopyableId, EmptyState, ErrorState, Panel, Spinner } from '../components/Panel'
+import { remember } from '../lib/lastViewed'
 import { PipelineStage, StageDetails, type StageState } from '../components/PipelineStage'
 import { StatusPill } from '../components/StatusPill'
 import {
@@ -30,6 +31,12 @@ export function TradeTimelinePage() {
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [])
+
+  // Keeps the nav pointing at this trade, so leaving and coming back does not
+  // drop it
+  useEffect(() => {
+    if (tradeId) remember({ tradeId })
+  }, [tradeId])
 
   const trade = useTrade(tradeId)
   const approval = useApprovalState(tradeId, { live: true })

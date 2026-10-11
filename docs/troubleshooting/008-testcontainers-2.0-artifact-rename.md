@@ -32,32 +32,55 @@ caches still hold a dependency resolution from before the project was upgraded
 to Spring Boot 4.0.6. A clean clone or a `--refresh-dependencies` run would
 likely surface the same failure there too.
 
-## Status — Deferred, Not Fixed
-No service in this project currently has any Testcontainers-based integration
-test. The broken dependency declarations don't block building or running any
-service — they only block `./gradlew test` if a test actually tries to use
-Testcontainers, which none currently do.
+## Status — Fixed
 
-Decision: leave the dependency declarations as-is for now rather than spend
-time chasing the correct Testcontainers 2.0 artifact names with no test to
-verify against. Revisit when real integration tests are written.
+Resolved once the first real unit tests were written, because the unresolvable
+declarations broke `compileTestJava` for the whole project and no test could run
+until they were corrected.
 
-## Fix (when revisited)
-Replace old-style coordinates with the `testcontainers-` prefixed equivalents,
-e.g.:
+## Fix
+
+The `testcontainers-` prefixed names were correct, but note how they were
+confirmed. The Maven Central **search API** returns nothing for
+`org.testcontainers:testcontainers-postgresql` and shows `org.testcontainers:postgresql`
+topping out at 1.21.3, which makes it look as though the rename never happened.
+The search index simply does not carry these artifacts.
+
+The authoritative source is the BOM chain. `spring-boot-dependencies-4.0.6.pom`
+pins `<testcontainers.version>2.0.5</testcontainers.version>` and imports
+`org.testcontainers:testcontainers-bom`, and that BOM lists the real artifact ids:
+
+```
+curl https://repo1.maven.org/maven2/org/testcontainers/testcontainers-bom/2.0.5/testcontainers-bom-2.0.5.pom
+```
+
+Applied across all seven services:
+
 ```kotlin
-// OLD (broken under Testcontainers 2.0.5)
+// OLD — unresolvable under the Testcontainers 2.0.5 BOM
 testImplementation("org.testcontainers:junit-jupiter")
 testImplementation("org.testcontainers:kafka")
 testImplementation("org.testcontainers:postgresql")
 
-// NEW (verify exact artifact IDs against Maven Central before applying)
+// NEW
 testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 testImplementation("org.testcontainers:testcontainers-kafka")
 testImplementation("org.testcontainers:testcontainers-postgresql")
 ```
-Exact new artifact IDs should be confirmed against Maven Central at fix time,
-not assumed from this note.
+
+Three services also carry Spring Initializr scaffolding
+(`TestcontainersConfiguration`) that needs two dependencies the generated build
+file never declared — `@ServiceConnection` and the Grafana LGTM container:
+
+```kotlin
+testImplementation("org.springframework.boot:spring-boot-testcontainers")
+testImplementation("org.testcontainers:testcontainers-grafana")
+```
+
+Those apply to `trade-processor-service`, `trade-ingestion-service` and
+`risk-engine-service`. The scaffolding's own imports were already on the 2.x
+package layout (`org.testcontainers.postgresql.PostgreSQLContainer`), so only the
+missing dependencies were at fault.
 
 ## Affected Services
 All services with `testImplementation("org.testcontainers:...")` declarations

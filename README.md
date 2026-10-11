@@ -80,7 +80,7 @@ every netted obligation containing exactly one instruction.
 
 Every trade writes a matching debit and credit to the **same** account, so balances
 net to zero and the DVP cash leg fails on every BUY — see
-[`troubleshooting/016`](./docs/troubleshooting/016-dvp-always-fails-insufficient-cash.md).
+[`troubleshooting/015`](./docs/troubleshooting/015-dvp-always-fails-insufficient-cash.md).
 Fund the account *before* submitting the trade:
 
 ```bash

@@ -6,7 +6,10 @@ import type { TradeRequest } from '../api/types'
 import { ErrorState, Panel } from '../components/Panel'
 import { formatAmount, notionalOf } from '../lib/format'
 
-const DEMO_ACCOUNT = '550e8460-e29b-41d4-a716-446655440000'
+/** Funded to 1,000,000 by demo/seed-account-cash.sql so a BUY clears the DVP
+ *  cash leg, and every one of its ledger entries was written after the
+ *  microsecond fix, so its hash chain verifies — both demos work from here */
+const DEMO_ACCOUNT = '9e1c7a40-3b55-4d2e-8f61-0a7b5c2d4e10'
 
 /** Each preset lands on the far side of exactly one rule threshold, so the
  *  timeline can be watched taking a different path each time
