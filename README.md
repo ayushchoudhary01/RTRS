@@ -1,7 +1,6 @@
 <div align="center">
 
 # Trade Flow
-## RTRS — Real-Time Trade & Risk System
 
 ### Microservices platform simulating a trading desk's post-trade pipeline, built to learn the engineering patterns real trading systems use
 
@@ -23,7 +22,7 @@
 
 ## What This Is
 
-RTRS simulates the back-end of a trading desk — the part nobody outside
+Trade Flow simulates the back-end of a trading desk — the part nobody outside
 engineering ever sees. A trade comes in, gets risk-checked, gets screened for
 money laundering, executes, gets recorded in an immutable ledger, settles two
 days later, and gets independently reconciled to make sure nothing went
